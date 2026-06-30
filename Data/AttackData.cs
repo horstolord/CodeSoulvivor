@@ -30,6 +30,7 @@ public static class AttackData
 			MightToKnockbackForce = 50f
 		},
 		AnimationName = "attack_kick",
+		
 		LockFacing = true,
 		CanMoveDuringStartup = false,
 		CanMoveDuringRecovery = false,
