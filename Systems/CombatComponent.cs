@@ -1,5 +1,4 @@
-using Sandbox.MovieMaker;
-using Sandbox.MovieMaker.Compiled;
+
 
 namespace Sandbox.Code.Systems;
 using System.Linq;
@@ -51,7 +50,7 @@ public sealed class CombatComponent : Component
             Scaling = attack.Scaling,
             Damage = new DamageProfileDef
             {
-                HealthDamage = attack.Damage.HealthDamage,
+                HealthDamage = attack.Damage.HealthDamage *attack.Scaling.MightToHealthDamage,
                 StaggerDamage = attack.Damage.StaggerDamage,
                 StaminaDamage = attack.Damage.StaminaDamage,
                 KnockbackForce = attack.Damage.KnockbackForce * attack.Scaling.MightToKnockbackForce
@@ -65,21 +64,16 @@ public sealed class CombatComponent : Component
                     Shapes = phase.Shapes
                         .Select( shape => new HitShapeDef
                         {
-                            Type = shape.Type,
                             CastType = shape.CastType,
                             LocalOffset = shape.LocalOffset,
-                            LocalRotation = shape.LocalRotation,
                             SweepOffset = shape.SweepOffset,
-                            Radius = shape.Radius,
-                            Length = shape.Length,
                             BoxSize = shape.BoxSize
                         } )
                         .ToList()
                 } )
                 .ToList(),
-            Tags = new HashSet<AttackTag>( attack.Tags ),
+            Tags = [..attack.Tags],
             AnimationName = attack.AnimationName,
-            AttackAnimation = attack.AttackAnimation,
             LockFacing = attack.LockFacing,
             CanMoveDuringStartup = attack.CanMoveDuringStartup,
             CanMoveDuringRecovery = attack.CanMoveDuringRecovery
@@ -94,7 +88,7 @@ public sealed class CombatComponent : Component
         var attacker = ResolveActor( context.Attacker );
         if ( attacker != null && !attacker.CanPayCost( context.Attack ) )
         {
-	        Log.Info( $"Not enough resources for {context.Attack.DisplayName}. Health {attacker.Runtime.Health}/{context.Attack.HealthCost}, stamina {attacker.Runtime.Stamina}/{context.Attack.StaminaCost}, energy {attacker.Runtime.Energy}/{context.Attack.EnergyCost}" );
+	        Log.Info( $"Not enough resources for {context.Attack.DisplayName}. Health {attacker.StatSheet.CurrentHealth}/{context.Attack.HealthCost}, stamina {attacker.StatSheet.CurrentStamina}/{context.Attack.StaminaCost}, energy {attacker.StatSheet.CurrentEnergy}/{context.Attack.EnergyCost}" );
 	        return false;
         }
         return true;
@@ -141,12 +135,22 @@ public sealed class CombatComponent : Component
     private void ExecuteHitShape( AttackContext context, HitShapeDef shape )
     {
 	    var rotation = context.Facing;
-	    var position = context.Origin;
 	    var worldOffset = rotation * shape.LocalOffset;
-	    var center = position + worldOffset;
+	    var center = context.Origin + worldOffset;
 	    var sweep = rotation * shape.SweepOffset;
 	    var start = shape.CastType == HitShapeCastType.Sweep ? center - sweep * 0.5f : center;
 	    var end = shape.CastType == HitShapeCastType.Sweep ? center + sweep * 0.5f : center;
+
+	    // Draw the box at the starting position (Cyan outline, stays for 2 seconds)
+	    DebugOverlay.Box( start, shape.BoxSize, Color.Cyan, duration: 2.0f);
+
+	    if ( shape.CastType == HitShapeCastType.Sweep )
+	    {
+		    // Draw the destination box if it's a sweep (Red outline)
+		    DebugOverlay.Box( end, shape.BoxSize, Color.Red, duration: 2.0f );
+		    // Connect the sweep path with a line
+		    DebugOverlay.Line( start, end, Color.Yellow, duration: 2.0f );
+	    }
 	    var hits = Scene.Trace
 		    .Box( shape.BoxSize, start, end )
 		    .IgnoreGameObjectHierarchy( context.Attacker )
@@ -156,8 +160,6 @@ public sealed class CombatComponent : Component
 	    {
 		    var target = hit.GameObject;
 		    if ( target == null )
-			    continue;
-		    if ( _hitObjects.Contains( target ) )
 			    continue;
 		    _hitObjects.Add( target );
 		    ApplyHit( context, target );
@@ -180,7 +182,7 @@ public sealed class CombatComponent : Component
 	    }
     }
 
-    private Actor? ResolveActor( GameObject gameObject )
+    private Actor ResolveActor( GameObject gameObject )
     {
 	    return gameObject.Components.GetAll<Actor>()
 		    .OrderByDescending( actor => actor.GetType() != typeof(Actor) )

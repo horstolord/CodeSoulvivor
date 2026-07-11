@@ -1,6 +1,3 @@
-using Sandbox.MovieMaker;
-using Sandbox.MovieMaker.Compiled;
-
 namespace Sandbox.Code.Systems;
 
 public class DamageProfileDef
@@ -20,13 +17,6 @@ public class HitPhaseDef
 }
 
 
-public enum HitShapeType
-{
-	Sphere,
-	Capsule,
-	Box
-}
-
 public enum HitShapeCastType
 {
 	Overlap,
@@ -34,13 +24,9 @@ public enum HitShapeCastType
 }
 public class HitShapeDef
 {
-	public HitShapeType Type;
 	public HitShapeCastType CastType;
 	public Vector3 LocalOffset;
-	public Rotation LocalRotation;
 	public Vector3 SweepOffset;
-	public float Radius;
-	public float Length;
 	public Vector3 BoxSize;
 }
 
@@ -75,7 +61,6 @@ public class AttackDef
 	public List<HitPhaseDef> HitPhases = new();
 	public HashSet<AttackTag> Tags = new();
 	public string AnimationName;
-	public MovieResource AttackAnimation {get; set;}
 	public bool LockFacing;
 	public bool CanMoveDuringStartup;
 	public bool CanMoveDuringRecovery;

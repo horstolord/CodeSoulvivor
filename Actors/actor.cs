@@ -6,43 +6,58 @@ using Systems;
 
 public class Actor : Component
 {
-	[Property] public AttributeSet  Attributes = new();
-	[Property] public DerivedStats  Derived    = new();
-	[Property] public RuntimeStats  Runtime    = new();
+	[Property] private AttributeSet Attributes = new();
+	
+	private StatSheet _statSheet;
+	public StatSheet StatSheet
+	{
+		get => _statSheet;
+		private set => _statSheet = value;
+	}
+
 	public CombatComponent Combat;
 
-	
 	protected override void OnStart()
 	{
 		base.OnStart();
-		Derived.Recalculate( Attributes );
-		Runtime.FillFromDerived( Derived );
+		
+		// Initialize the comprehensive stat sheet from attributes
+		_statSheet = new StatSheet( Attributes );
+		
+		Log.Info( $"{GameObject.Name} initialized with stats: HP={_statSheet.CurrentHealth}, Stamina={_statSheet.CurrentStamina}" );
 	}
 
 	public bool CanPayCost( AttackDef attack )
 	{
-		return Runtime.Health > attack.HealthCost
-		       && Runtime.Stamina >= attack.StaminaCost
-		       && Runtime.Energy >= attack.EnergyCost;
+		var cost = attack.StaminaCost * (_statSheet.CostMultiplier.Value / 100f);
+		return _statSheet.CurrentHealth > attack.HealthCost
+		       && _statSheet.CurrentStamina >= cost
+		       && _statSheet.CurrentEnergy >= attack.EnergyCost;
 	}
 
 	public void PayCost( AttackDef attack )
 	{
+		var staminaCost = attack.StaminaCost * (_statSheet.CostMultiplier.Value / 100f);
+		
 		if ( attack.HealthCost > 0f )
-			Runtime.Health = System.MathF.Max( 1f, Runtime.Health - attack.HealthCost );
-		Runtime.Stamina = System.MathF.Max( 0f, Runtime.Stamina - attack.StaminaCost );
-		Runtime.Energy = System.MathF.Max( 0f, Runtime.Energy - attack.EnergyCost );
+			_statSheet.CurrentHealth = MathF.Max( 1f, _statSheet.CurrentHealth - attack.HealthCost );
+		_statSheet.CurrentStamina = MathF.Max( 0f, _statSheet.CurrentStamina - staminaCost );
+		_statSheet.CurrentEnergy = MathF.Max( 0f, _statSheet.CurrentEnergy - attack.EnergyCost );
 	}
 
 	public void ApplyDamage( DamageProfileDef damage )
 	{
-		Runtime.Health = System.MathF.Max( 0f, Runtime.Health - damage.HealthDamage );
-		Runtime.Stamina = System.MathF.Max( 0f, Runtime.Stamina - damage.StaminaDamage );
-		Runtime.Stagger = System.MathF.Max( 0f, Runtime.Stagger - damage.StaggerDamage );
+		// Apply armor reduction
+		var damageMultiplier = _statSheet.DamageMultiplier.Value / 100f;
+		var healthDamage = damage.HealthDamage * damageMultiplier;
 
-		Log.Info( $"{GameObject.Name} took damage: health={Runtime.Health}, stamina={Runtime.Stamina}, stagger={Runtime.Stagger}" );
+		_statSheet.CurrentHealth = MathF.Max( 0f, _statSheet.CurrentHealth - healthDamage );
+		_statSheet.CurrentStamina = MathF.Max( 0f, _statSheet.CurrentStamina - damage.StaminaDamage );
+		_statSheet.CurrentStagger = MathF.Max( 0f, _statSheet.CurrentStagger - damage.StaggerDamage );
 
-		if ( Runtime.Health <= 0f )
+		Log.Info( $"{GameObject.Name} took {healthDamage:F1} damage: health={_statSheet.CurrentHealth:F1}/{_statSheet.MaxHealth.Value:F1}" );
+
+		if ( _statSheet.CurrentHealth <= 0f )
 			OnKilled();
 	}
 
@@ -55,20 +70,22 @@ public class Actor : Component
 	protected override void OnUpdate()
 	{
 		base.OnUpdate();
-		Regenerate( Time.Delta );
+		if ( _statSheet != null )
+			Regenerate( Time.Delta );
+		else
+		{
+			Log.Info( $"Error, missing" );	
+		}
+		
 	}
 
-	private void Regenerate(float dt)
+	private void Regenerate( float dt )
 	{
-		Runtime.Health = MathF.Min( Runtime.Health + Derived.HealthRegen * dt, Derived.MaxHealth );
-		Runtime.Stamina = MathF.Min( Runtime.Stamina + Derived.StaminaRegen * dt, Derived.MaxStamina );
-		Runtime.Energy = MathF.Min( Runtime.Energy + Derived.EnergyRegen * dt, Derived.MaxEnergy );
+		_statSheet.CurrentHealth = MathF.Min( _statSheet.CurrentHealth + _statSheet.HealthRegen.Value * dt, _statSheet.MaxHealth.Value );
+		_statSheet.CurrentStamina = MathF.Min( _statSheet.CurrentStamina + _statSheet.StaminaRegen.Value * dt, _statSheet.MaxStamina.Value );
+		_statSheet.CurrentEnergy = MathF.Min( _statSheet.CurrentEnergy + _statSheet.EnergyRegen.Value * dt, _statSheet.MaxEnergy.Value );
 	}
+
 	
-
-
-
 }
-
-	
 

@@ -30,7 +30,6 @@ public static class AttackData
 			MightToKnockbackForce = 50f
 		},
 		AnimationName = "attack_kick",
-		
 		LockFacing = true,
 		CanMoveDuringStartup = false,
 		CanMoveDuringRecovery = false,
@@ -52,10 +51,8 @@ public static class AttackData
 				{
 					new HitShapeDef
 					{
-						Type = HitShapeType.Box,
 						CastType = HitShapeCastType.Sweep,
 						LocalOffset = new Vector3( 45f, 0f, 40f ),
-						LocalRotation = Rotation.Identity,
 						SweepOffset = new Vector3( 30f, 0f, 0f ),
 						BoxSize = new Vector3( 60f, 60f, 60f )
 					}
@@ -85,7 +82,7 @@ public static class AttackData
 			MightToStaggerDamage = 3f,
 			MightToKnockbackForce = 50f
 		},
-		AnimationName = "punch_right",
+		AnimationName = "b_attack",
 		LockFacing = true,
 		CanMoveDuringStartup = false,
 		CanMoveDuringRecovery = false,
@@ -95,7 +92,7 @@ public static class AttackData
 			AttackTag.Unarmed,
 			AttackTag.Strike
 		},
-		AttackAnimation = ResourceLibrary.Get<MovieResource>("punch_right.movie"),
+		
 		HitPhases = new List<HitPhaseDef>
 		{
 			new HitPhaseDef
@@ -107,11 +104,9 @@ public static class AttackData
 				{
 					new HitShapeDef
 					{
-						Type = HitShapeType.Box,
 						CastType = HitShapeCastType.Sweep,
-						LocalOffset = new Vector3( 45f, 0f, 40f ),
-						LocalRotation = Rotation.Identity,
-						SweepOffset = new Vector3( 30f, 0f, 0f ),
+						LocalOffset = new Vector3( 40f, 0f, 40f ),
+						SweepOffset = new Vector3( 90f, 0f, 0f ),
 						BoxSize = new Vector3( 34f, 42f, 42f )
 					}
 				}

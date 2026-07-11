@@ -1,17 +1,26 @@
+using Sandbox.Citizen;
 using Sandbox.Code.Data;
 using Sandbox.Code.Systems;
-using Sandbox.MovieMaker;
 namespace Sandbox.Code.Actors;
 public sealed class Player : Actor
 {
-	[Property] public MoviePlayer MoviePlayer { get; set; }
-	private CombatComponent _combat;
+	
+	
+	[Property] public SkinnedModelRenderer BodyRenderer { get; set; }
+	
 	protected override void OnStart()
 	{
 		base.OnStart();
-		_combat = GameObject.Components.Get<CombatComponent>();
-		if (MoviePlayer == null )
-			MoviePlayer = GameObject.AddComponent<MoviePlayer>();
+		Combat = GameObject.Components.Get<CombatComponent>();
+		BodyRenderer ??= Components.GetInChildren<SkinnedModelRenderer>();
+		if ( BodyRenderer is null )
+			Log.Warning( $"No BodyRenderer found on {GameObject.Name}" );
+		foreach ( var r in Components.GetAll<SkinnedModelRenderer>( FindMode.EnabledInSelfAndDescendants ) )
+		{
+			Log.Info( $"Found renderer: {r.GameObject.Name}" );
+		}
+		BodyRenderer ??= Components.GetInChildren<SkinnedModelRenderer>();
+		Log.Info( $"Assigned renderer: {BodyRenderer?.GameObject?.Name ?? "NULL"}" );
 	}
 	protected override void OnUpdate()
 	{
@@ -19,13 +28,21 @@ public sealed class Player : Actor
 		HandleCombatInput();
 		DrawDebugStats();
 	}
-	private void HandleCombatInput()
+	private async void HandleCombatInput()
 	{
-		if ( _combat == null )
+		if ( Combat == null )
 			return;
 		if ( Input.Keyboard.Pressed( "attack1" ) || Input.Keyboard.Pressed( "mouse1" ) )
 		{
 			TryPerformAttack( AttackData.Punch );
+			BodyRenderer.Set( "holdtype", 5 );
+			BodyRenderer.Set( "b_attack", true );
+			await Task.DelaySeconds( 0.5f );
+			BodyRenderer.Set( "holdtype", 0 );
+			BodyRenderer.Set( "b_attack", false );
+			
+			
+			
 		}
 		if ( Input.Keyboard.Pressed( "F" ) )
 		{
@@ -49,14 +66,16 @@ public sealed class Player : Actor
 			AlternateUse = false,
 			TriggerType = AttackTriggerType.PlayerInput
 		};
-		PlayAttackAnimation( attack );
-		_combat.TryStartAttack( request );
+		DebugAttackAnimation( attack );
+		Combat.TryStartAttack( request );
+		
+
 	}
-	private void PlayAttackAnimation( AttackDef attack )
+	private void DebugAttackAnimation( AttackDef attack )
 	{
-		if ( MoviePlayer == null )
+		if ( BodyRenderer == null )
 		{
-			Log.Warning( "Player has no MoviePlayer assigned." );
+			Log.Warning( "Actor has no Renderer assigned." );
 			return;
 		}
 		if ( attack == null )
@@ -64,31 +83,35 @@ public sealed class Player : Actor
 			Log.Warning( "Tried to play animation for null attack." );
 			return;
 		}
-		if ( attack.AttackAnimation == null )
+		if ( attack.AnimationName == null )
 		{
 			Log.Warning( $"Attack {attack.Id} has no AttackAnimation assigned." );
 			return;
 		}
 		
-		MoviePlayer.Play(attack.AttackAnimation);
+		
 	}
 	private void DrawDebugStats()
 	{
 		Gizmo.Draw.ScreenText(
-			$"Health: {Runtime.Health}",
+			$"Health: {StatSheet.CurrentHealth:F1}/{StatSheet.MaxHealth.Value:F1}",
 			new Vector2( 10, 10 )
 		);
 		Gizmo.Draw.ScreenText(
-			$"Energy: {Runtime.Energy}",
+			$"Energy: {StatSheet.CurrentEnergy:F1}/{StatSheet.MaxEnergy.Value:F1}",
 			new Vector2( 10, 30 )
 		);
 		Gizmo.Draw.ScreenText(
-			$"Stamina: {Runtime.Stamina}",
+			$"Stamina: {StatSheet.CurrentStamina:F1}/{StatSheet.MaxStamina.Value:F1}",
 			new Vector2( 10, 50 )
 		);
 		Gizmo.Draw.ScreenText(
-			$"Stagger: {Runtime.Stagger}",
+			$"Stagger: {StatSheet.CurrentStagger:F1}/{StatSheet.MaxStagger.Value:F1}",
 			new Vector2( 10, 70 )
+		);
+		Gizmo.Draw.ScreenText(
+			$"StaminaRegen: {StatSheet.StaminaRegen.Value:F2}/s (Agility: {StatSheet.Agility.Value:F1})",
+			new Vector2( 10, 90 )
 		);
 	}
 }
