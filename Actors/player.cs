@@ -5,12 +5,13 @@ namespace Sandbox.Code.Actors;
 public sealed class Player : Actor
 {
 	
-	
+	public static Player Local { get; private set; }
 	[Property] public SkinnedModelRenderer BodyRenderer { get; set; }
 	
 	protected override void OnStart()
 	{
 		base.OnStart();
+		Local = this;
 		Combat = GameObject.Components.Get<CombatComponent>();
 		BodyRenderer ??= Components.GetInChildren<SkinnedModelRenderer>();
 		if ( BodyRenderer is null )
@@ -26,7 +27,8 @@ public sealed class Player : Actor
 	{
 		base.OnUpdate();
 		HandleCombatInput();
-		DrawDebugStats();
+		
+		Local = this;
 	}
 	private async void HandleCombatInput()
 	{

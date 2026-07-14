@@ -144,7 +144,7 @@ public class StatSheet : Component
 
 		// Regeneration rates
 		HealthRegen.BaseValue = Vitality.Value * 0.1f;
-		StaminaRegen.BaseValue = Agility.Value * 5f;
+		StaminaRegen.BaseValue = Agility.Value * 1f;
 		EnergyRegen.BaseValue = Acuity.Value * 0.2f;
 
 		// Clamp current pools to max
@@ -168,7 +168,6 @@ public class StatSheet : Component
 
 	/// <summary>
 	/// Get a stat by name. Useful for dynamic buff application.
-	/// </summary>
 	public Stat GetStat( string statName )
 	{
 		return statName switch
@@ -224,10 +223,7 @@ public class StatSheet : Component
 			_ => null
 		};
 	}
-
-	/// <summary>
 	/// Get all modifiable stats as a collection. Useful for UI or debugging.
-	/// </summary>
 	public IEnumerable<(string Name, Stat Stat)> GetAllStats()
 	{
 		yield return ( "Might", Might );

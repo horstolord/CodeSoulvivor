@@ -1,9 +1,6 @@
-
-
 namespace Sandbox.Code.Systems;
 using System.Linq;
 using Actors;
-using Sandbox.Code.Actors;
 
 public sealed class CombatComponent : Component
 {
@@ -162,6 +159,10 @@ public sealed class CombatComponent : Component
 		    var target = hit.GameObject;
 		    if ( target == null )
 			    continue;
+		    
+		    if ( _hitObjects.Contains( target ) )
+			    continue;
+			    
 		    _hitObjects.Add( target );
 		    ApplyHit( context, target );
 	    }
@@ -171,17 +172,28 @@ public sealed class CombatComponent : Component
 	    var actor = ResolveActor( target );
 	    actor?.ApplyDamage( context.Damage );
 
-	    var body = target.Components.Get<Rigidbody>();
-	    if ( body != null && body.Enabled )
-	    {
-		    // Apply knockback impulse at 45 degrees (forward + upward)
-		    var knockbackDirection = ( context.Facing.Forward + Vector3.Up ).Normal;
-		    body.ApplyImpulse( knockbackDirection * context.Damage.KnockbackForce );
-	    }
-	    else
-	    {
-		    Log.Info( $"Attack hit {target.Name}, but no active Rigidbody was found." );
-	    }
+	    var _body = target.Components.GetInAncestorsOrSelf<Rigidbody>();
+	    if ( _body != null )
+		    if ( actor is Enemy enemy )
+		    {
+			    // Apply knockback impulse at 45 degrees (forward + upward)
+			    var knockbackDirection = ( context.Facing.Forward + Vector3.Up ).Normal;
+			    _body.ApplyImpulse( knockbackDirection * context.Damage.KnockbackForce );
+		    }
+		    else
+		    {
+			    Log.Info( $"Attack hit {target.Name}, but no Rigidbody was found." );
+			    var body = target.Components.GetInAncestorsOrSelf<Rigidbody>();
+			    if ( _body != null )
+			    {
+				    var impulseDirection = context.Facing.Forward.Normal;
+				    _body.ApplyImpulse( impulseDirection * context.Damage.KnockbackForce );
+			    }
+			    else
+			    {
+				    Log.Info( $"Attack hit {target.Name}, but no Rigidbody was found." );
+			    }
+		    }
     }
 
     private Actor ResolveActor( GameObject gameObject )
