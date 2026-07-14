@@ -1,142 +1,108 @@
-namespace Sandbox.Code.Actors;
+using Sandbox;
 using System;
 using System.Linq;
 using Sandbox.Code.Data;
 using Sandbox.Code.Systems;
-
+namespace Sandbox.Code.Actors;
 public sealed class Enemy : Actor
 {
 	[Property] public GameObject Target { get; set; }
 	[Property] public float AttackRange { get; set; } = 80f;
 	[Property] public float StopRange { get; set; } = 50f; // Prevent running directly inside the player
-
-	[Property] public float Speed { get; set; } = 120f;
-	[Property] public float Acceleration { get; set; } = 8f; // Steering speed
-
 	[Property] public AttackDef AttackType { get; set; } // The attack type this enemy uses
-
 	private CharacterController _controller;
-	private Rigidbody _rigidbody;
+	private Vector3 _knockbackVelocity;
 	private float _attackCooldownTimer;
-
 	protected override void OnStart()
 	{
 		base.OnStart();
-
-		// Fetch standard components safely
+		// Fetch standard components
 		_controller = Components.Get<CharacterController>();
-		_rigidbody = Components.Get<Rigidbody>();
 		Combat = Components.Get<CombatComponent>();
-
-		// Find target on start
-		if ( !Target.IsValid() )
+		// Fallback target find
+		if ( Target == null )
 		{
 			FindPlayerTarget();
 		}
-
 		// Fallback attack type
 		AttackType ??= AttackData.Punch;
 	}
-
 	protected override void OnUpdate()
 	{
 		base.OnUpdate();
-
-		if ( !Target.IsValid() )
+		if ( Target == null )
 		{
 			FindPlayerTarget();
 			return;
 		}
-
 		// Handle attack cooldown countdowns
 		if ( _attackCooldownTimer > 0f )
 		{
 			_attackCooldownTimer -= Time.Delta;
 		}
 	}
-
 	protected override void OnFixedUpdate()
 	{
-		if ( !Target.IsValid() ) return;
-
+		if ( Target == null ) return;
 		// Calculate direction and distance to player
 		Vector3 targetPos = Target.WorldPosition;
 		Vector3 diff = targetPos - GameObject.WorldPosition;
 		float distance = diff.Length;
 		Vector3 direction = diff.WithZ( 0 ).Normal;
-
 		// Rotate towards the target player
 		if ( direction.LengthSquared > 0.01f )
 		{
 			GameObject.WorldRotation = Rotation.LookAt( direction, Vector3.Up );
 		}
-
 		Vector3 wishVelocity = Vector3.Zero;
-
 		// Move towards the player if they are beyond the stop range
 		if ( distance > StopRange )
 		{
-			float speed = StatSheet?.MoveSpeed?.Value ?? Speed;
+			// Pull speed from the StatSheet (default to 120)
+			float speed = StatSheet?.MoveSpeed?.Value ?? 120f;
 			wishVelocity = direction * speed;
 		}
-
-		// Move using S&box's CharacterController if we have one
-		if ( _controller.IsValid() )
+		// Smoothly decay knockback over time
+		
+		// Move using S&box's CharacterController
+		if ( _controller != null )
 		{
-			// Reset horizontal velocity, but preserve vertical gravity
-			Vector3 velocity = wishVelocity;
-			velocity.z = _controller.Velocity.z;
-
-			// Simple gravity fallback for CharacterController if in air
+			// Combine voluntary movement and involuntary knockback
+			_controller.Velocity = wishVelocity + _knockbackVelocity;
+			// Apply gravity if in the air
 			if ( !_controller.IsOnGround )
 			{
-				var gravity = Scene?.PhysicsWorld?.Gravity ?? new Vector3( 0, 0, -800f );
-				velocity += gravity * Time.Delta;
+				_controller.Velocity += Scene.PhysicsWorld.Gravity * Time.Delta;
 			}
-
-			_controller.Velocity = velocity;
 			_controller.Move();
-		}
-		// If we have a Rigidbody, steer it physically so collisions, gravity, and knockbacks work automatically!
-		else if ( _rigidbody.IsValid() )
-		{
-			Vector3 currentHorizontal = _rigidbody.Velocity.WithZ( 0 );
-			Vector3 velocityChange = wishVelocity - currentHorizontal;
-
-			// Apply a steering force to adjust speed horizontally
-			_rigidbody.ApplyForce( velocityChange * _rigidbody.Mass * Acceleration );
 		}
 		else
 		{
-			// Fallback direct movement in case neither is present
-			GameObject.WorldPosition += wishVelocity * Time.Delta;
+			// Fallback direct movement in case CharacterController is missing
+			GameObject.WorldPosition += (wishVelocity + _knockbackVelocity) * Time.Delta;
 		}
-
 		// Try to attack the player when in range and cooldown is ready
 		if ( distance <= AttackRange && _attackCooldownTimer <= 0f )
 		{
-			TryPerformAttack();
+			TryPerformAttack(AttackData.Punch);
 		}
 	}
-
 	private void FindPlayerTarget()
 	{
-		var player = Scene?.GetAllComponents<Player>().FirstOrDefault();
-		if ( player.IsValid() )
+		var player = Scene.GetAllComponents<Player>().FirstOrDefault();
+		if ( player != null )
 		{
 			Target = player.GameObject;
 		}
 	}
-
-	private void TryPerformAttack()
+	private void TryPerformAttack(AttackDef attack)
 	{
-		if ( !Combat.IsValid() || AttackType == null ) return;
-
+		if ( Combat == null || AttackType == null ) return;
 		var facing = GameObject.WorldRotation;
 		var request = new AttackRequest
 		{
 			Attacker = GameObject,
-			Attack = AttackType,
+			Attack = attack,
 			SourceItem = null,
 			Origin = GameObject.WorldPosition,
 			Facing = facing,
@@ -144,36 +110,29 @@ public sealed class Enemy : Actor
 			TargetPoint = null,
 			Charge01 = 0f,
 			AlternateUse = false,
-			TriggerType = AttackTriggerType.Ai
+			
+		
 		};
-
 		if ( Combat.TryStartAttack( request ) )
 		{
 			// Put the attack on cooldown
 			_attackCooldownTimer = AttackType.CooldownTime + AttackType.StartupTime + AttackType.RecoveryTime;
-
 			// Play the attack animation triggers
 			var bodyRenderer = Components.GetInChildren<SkinnedModelRenderer>();
-			if ( bodyRenderer.IsValid() )
+			if ( bodyRenderer != null )
 			{
 				bodyRenderer.Set( "b_attack", true );
+				// You can clear it or set holdtypes here as well, similar to your Player component
 			}
 		}
 	}
-
 	/// <summary>
-	/// Receives knockback from an attack, pushing the enemy away from the attacker
+	/// Custom knockback receiver. Call this when the enemy takes a hit.
 	/// </summary>
-	public void ReceiveKnockback( Vector3 attacker_position, float force )
+	public void ReceiveKnockback( Vector3 attackerPosition, float force )
 	{
-		if ( !_rigidbody.IsValid() )
-			return;
-
-		// Calculate direction away from attacker
-		Vector3 knockback_direction = ( GameObject.WorldPosition - attacker_position ).Normal;
-		
-		// Apply the impulse
-		_rigidbody.ApplyImpulse( knockback_direction * force );
+		if ( force <= 0f ) return;
+		Vector3 knockbackDir = (GameObject.WorldPosition - attackerPosition).WithZ(0).Normal;
+		_knockbackVelocity = knockbackDir * force;
 	}
 }
-

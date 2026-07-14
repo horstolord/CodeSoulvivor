@@ -1,0 +1,33 @@
+C:\Program Files (x86)\Steam\steamapps\common\sbox\.vs\output\Base Library.staticwebassets.endpoints.json
+C:\Program Files (x86)\Steam\steamapps\common\sbox\.vs\output\Properties\launchSettings.json
+C:\Program Files (x86)\Steam\steamapps\common\sbox\.vs\output\soulvivor.staticwebassets.endpoints.json
+C:\Program Files (x86)\Steam\steamapps\common\sbox\.vs\output\deathstickz.xml
+C:\Program Files (x86)\Steam\steamapps\common\sbox\.vs\output\soulvivor.deps.json
+C:\Program Files (x86)\Steam\steamapps\common\sbox\.vs\output\soulvivor.dll
+C:\Program Files (x86)\Steam\steamapps\common\sbox\.vs\output\soulvivor.pdb
+C:\Users\horst\OneDrive\Documents\s&box projects\soulvivor_alpha\Code\obj\Debug\soulvivor.csproj.AssemblyReference.cache
+C:\Users\horst\OneDrive\Documents\s&box projects\soulvivor_alpha\Code\obj\Debug\rpswa.dswa.cache.json
+C:\Users\horst\OneDrive\Documents\s&box projects\soulvivor_alpha\Code\obj\Debug\soulvivor.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\horst\OneDrive\Documents\s&box projects\soulvivor_alpha\Code\obj\Debug\soulvivor.AssemblyInfoInputs.cache
+C:\Users\horst\OneDrive\Documents\s&box projects\soulvivor_alpha\Code\obj\Debug\soulvivor.AssemblyInfo.cs
+C:\Users\horst\OneDrive\Documents\s&box projects\soulvivor_alpha\Code\obj\Debug\soulvivor.csproj.CoreCompileInputs.cache
+C:\Users\horst\OneDrive\Documents\s&box projects\soulvivor_alpha\Code\obj\Debug\rjimswa.dswa.cache.json
+C:\Users\horst\OneDrive\Documents\s&box projects\soulvivor_alpha\Code\obj\Debug\rjsmrazor.dswa.cache.json
+C:\Users\horst\OneDrive\Documents\s&box projects\soulvivor_alpha\Code\obj\Debug\rjsmcshtml.dswa.cache.json
+C:\Users\horst\OneDrive\Documents\s&box projects\soulvivor_alpha\Code\obj\Debug\scopedcss\bundle\soulvivor.styles.css
+C:\Users\horst\OneDrive\Documents\s&box projects\soulvivor_alpha\Code\obj\Debug\staticwebassets.build.json
+C:\Users\horst\OneDrive\Documents\s&box projects\soulvivor_alpha\Code\obj\Debug\staticwebassets.build.json.cache
+C:\Users\horst\OneDrive\Documents\s&box projects\soulvivor_alpha\Code\obj\Debug\staticwebassets.development.json
+C:\Users\horst\OneDrive\Documents\s&box projects\soulvivor_alpha\Code\obj\Debug\staticwebassets.build.endpoints.json
+C:\Users\horst\OneDrive\Documents\s&box projects\soulvivor_alpha\Code\obj\Debug\swae.build.ex.cache
+C:\Users\horst\OneDrive\Documents\s&box projects\soulvivor_alpha\Code\obj\Debug\staticwebassets\msbuild.soulvivor.Microsoft.AspNetCore.StaticWebAssets.props
+C:\Users\horst\OneDrive\Documents\s&box projects\soulvivor_alpha\Code\obj\Debug\staticwebassets\msbuild.soulvivor.Microsoft.AspNetCore.StaticWebAssetEndpoints.props
+C:\Users\horst\OneDrive\Documents\s&box projects\soulvivor_alpha\Code\obj\Debug\staticwebassets\msbuild.build.soulvivor.props
+C:\Users\horst\OneDrive\Documents\s&box projects\soulvivor_alpha\Code\obj\Debug\staticwebassets\msbuild.buildMultiTargeting.soulvivor.props
+C:\Users\horst\OneDrive\Documents\s&box projects\soulvivor_alpha\Code\obj\Debug\staticwebassets\msbuild.buildTransitive.soulvivor.props
+C:\Users\horst\OneDrive\Documents\s&box projects\soulvivor_alpha\Code\obj\Debug\staticwebassets.pack.json
+C:\Users\horst\OneDrive\Documents\s&box projects\soulvivor_alpha\Code\obj\Debug\soulvivor.csproj.Up2Date
+C:\Users\horst\OneDrive\Documents\s&box projects\soulvivor_alpha\Code\obj\Debug\soulvivor.dll
+C:\Users\horst\OneDrive\Documents\s&box projects\soulvivor_alpha\Code\obj\Debug\refint\soulvivor.dll
+C:\Users\horst\OneDrive\Documents\s&box projects\soulvivor_alpha\Code\obj\Debug\soulvivor.pdb
+C:\Users\horst\OneDrive\Documents\s&box projects\soulvivor_alpha\Code\obj\Debug\ref\soulvivor.dll
