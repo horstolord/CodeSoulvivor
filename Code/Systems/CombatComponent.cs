@@ -26,6 +26,8 @@ public sealed class CombatComponent : Component
     private AttackContext BuildContext( AttackRequest request )
     {
         var attack = request.Attack;
+        var attackerActor = ResolveActor( request.Attacker );
+        var attackerMight = attackerActor?.StatSheet?.Might.Value ?? 0f;
         return new AttackContext
         {
             Request = request,
@@ -48,7 +50,7 @@ public sealed class CombatComponent : Component
             Scaling = attack.Scaling,
             Damage = new DamageProfileDef
             {
-                HealthDamage = attack.Damage.HealthDamage *attack.Scaling.MightToHealthDamage,
+                HealthDamage = attack.Damage.HealthDamage + attackerMight * attack.Scaling.MightToHealthDamage,
                 StaggerDamage = attack.Damage.StaggerDamage,
                 StaminaDamage = attack.Damage.StaminaDamage,
                 KnockbackForce = attack.Damage.KnockbackForce * attack.Scaling.MightToKnockbackForce

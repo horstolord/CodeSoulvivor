@@ -15,7 +15,7 @@ public class LevelComponent : Component
 	public int   Level         { get; private set; } = 1;
 	public float CurrentSouls  { get; private set; } = 0f;
 	/// <summary>Souls needed to reach the next level.</summary>
-	public float SoulThreshold { get; private set; } = 50f;
+	public float SoulThreshold { get; private set; } = 10f;
 
 	// ============ DATA ============
 	private MobData _data;

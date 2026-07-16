@@ -19,6 +19,13 @@ public class StatSheet : Component
 	public Stat Will { get; private set; }
 	public Stat Acuity { get; private set; }
 	public Stat Wisdom { get; private set; }
+	public Stat MightPerLevel { get; private set; }
+	public Stat SwiftnessPerLevel { get; private set; }
+	public Stat EndurancePerLevel { get; private set; }
+	public Stat WillPerLevel { get; private set; }
+	public Stat AcuityPerLevel { get; private set; }
+	public Stat WisdomPerLevel { get; private set; }
+	
 
 	// ============ RESOURCE POOLS ============
 	// Current and max values for health/stamina/energy
@@ -86,11 +93,17 @@ public class StatSheet : Component
 		// 2. Fill this actor's own copies with the template's numbers
 		// (Assuming your 'Stat' constructor takes a float value)
 		Might = new Stat( templateData.Might );
-		Swiftness = new Stat( templateData.Swiftness );
+		Swiftness = new Stat( templateData.Swiftness);
 		Endurance = new Stat( templateData.Endurance );
-		Will = new Stat( templateData.Will );
+		Will = new Stat( templateData.Will);
 		Acuity = new Stat( templateData.Acuity );
 		Wisdom = new Stat( templateData.Wisdom );
+		MightPerLevel = new Stat( templateData.MightPerLevel );
+		SwiftnessPerLevel = new Stat( templateData.SwiftnessPerLevel );
+		EndurancePerLevel = new Stat( templateData.EndurancePerLevel );
+		WillPerLevel = new Stat( templateData.WillPerLevel );
+		AcuityPerLevel = new Stat( templateData.AcuityPerLevel );
+		WisdomPerLevel = new Stat( templateData.WisdomPerLevel );
 
 		Log.Info( $"{GameObject.Name} stats initialized successfully as a unique instance of '{templateData.Name}'." );
 		
@@ -175,8 +188,6 @@ public class StatSheet : Component
 		CurrentEnergy = MaxEnergy.Value;
 		CurrentStagger = MaxStagger.Value;
 	}
-
-	/// <summary>
 	/// Get a stat by name. Useful for dynamic buff application.
 	public Stat GetStat( string statName )
 	{
@@ -186,7 +197,7 @@ public class StatSheet : Component
 			"Might" => Might,
 			"Swiftness" => Swiftness,
 			"Endurance" => Endurance,
-			"Willpower" => Will,
+			"Will" => Will,
 			"Acuity" => Acuity,
 			"Wisdom" => Wisdom,
 

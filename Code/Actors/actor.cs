@@ -91,7 +91,7 @@ public class Actor : Component
 	public void ApplyDamage( DamageProfileDef damage )
 	{
 		var damageMultiplier = StatSheet.DamageMultiplier.Value / 100f;
-		var healthDamage     = StatSheet.Might.Value +damage.HealthDamage * damageMultiplier;
+		var healthDamage     = damage.HealthDamage * damageMultiplier;
 
 		StatSheet.CurrentHealth  = MathF.Max( 0f, StatSheet.CurrentHealth  - healthDamage );
 		StatSheet.CurrentStamina = MathF.Max( 0f, StatSheet.CurrentStamina - damage.StaminaDamage );

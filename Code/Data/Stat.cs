@@ -22,7 +22,16 @@ public class StatModifier
 
 public class Stat
 {
-	public float BaseValue;
+	private float _baseValue;
+	public float BaseValue
+	{
+		get => _baseValue;
+		set
+		{
+			_baseValue = value;
+			_dirty = true;
+		}
+	}
 	private readonly List<StatModifier> _modifiers = new();
 	private float _cachedValue;
 	private bool _dirty = true;

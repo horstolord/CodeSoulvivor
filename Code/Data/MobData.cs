@@ -68,9 +68,9 @@ public static class MobRegistry
 			// Hero levels quickly, balanced growth
 			BaseSoulValue  = 0f,   // player dropping souls is handled by CurrentSouls
 			SoulsToLevel   = 30f,
-			MightPerLevel      = 1.5f,
-			SwiftnessPerLevel  = 1.0f,
-			EndurancePerLevel  = 1.5f,
+			MightPerLevel      = 5f,
+			SwiftnessPerLevel  = 10f,
+			EndurancePerLevel  = 5f,
 			WillPerLevel       = 0.8f,
 			AcuityPerLevel     = 0.8f,
 			WisdomPerLevel     = 0.8f,
