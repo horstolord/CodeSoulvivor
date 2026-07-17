@@ -17,7 +17,6 @@ public class SpawnDirector : Component
 {
 	// ============ TUNING ============
 	[Property] public GameObject EnemyPrefab     { get; set; }
-
 	/// <summary>Base credits earned per second at difficulty 1.0.</summary>
 	[Property] public float BaseCreditRate   { get; set; } = 2f;
 
@@ -54,7 +53,6 @@ public class SpawnDirector : Component
 	protected override void OnUpdate()
 	{
 		base.OnUpdate();
-
 		_elapsed += Time.Delta;
 		_cooldownTimer -= Time.Delta;
 		DrawGizmos();
@@ -69,46 +67,57 @@ public class SpawnDirector : Component
 	// ============ SPAWNING ============
 	private void TrySpawn()
 	{
-		if ( EnemyPrefab == null )
+		// 1. Safeguard against null or destroyed templates
+		if ( EnemyPrefab == null || !EnemyPrefab.IsValid() )
 		{
-			Log.Warning( "[SpawnDirector] No EnemyPrefab assigned!" );
+			Log.Warning( "[SpawnDirector] No valid EnemyPrefab assigned!" );
 			return;
 		}
 
-		// Respect enemy cap
 		int liveEnemies = Scene.GetAllComponents<Enemy>().Count();
 		if ( liveEnemies >= EnemyCap ) return;
 
-		// Filter to affordable cards for current difficulty
-		var affordable = SpawnCardRegistry.All
-			.Where( c => c.Cost <= _credits && c.MinDifficulty <= Difficulty )
+		// Filter to difficulty eligible cards (preventing the credit poverty trap)
+		var eligible = SpawnCardRegistry.All
+			.Where( c => c.MinDifficulty <= Difficulty )
 			.ToList();
 
-		if ( affordable.Count == 0 ) return;
+		if ( eligible.Count == 0 ) return;
 
-		var card = WeightedRandom( affordable );
+		var card = WeightedRandom( eligible );
 
-		// Find the player — no player, no spawn
+		// Find the player
 		var player = Scene.GetAllComponents<Player>().FirstOrDefault();
 		if ( player == null ) return;
 
-		Vector3 spawnPos = PickSpawnPosition( player.GameObject.WorldPosition );
+		// Wait and save credits if we can't afford the rolled card
+		if ( _credits < card.Cost )
+		{
+			_cooldownTimer = SpawnCooldown;
+			return;
+		}
 
-		// Clone the shared prefab
-		var spawnedGO = EnemyPrefab.Clone( spawnPos );
+		// 2. Clone the static prefab disabled using CloneConfig
+		Vector3 spawnPos = PickSpawnPosition( player.GameObject.WorldPosition );
+		var config = new CloneConfig( new Transform( spawnPos ), null, false );
+    
+		var spawnedGO = EnemyPrefab.Clone( config );
 		spawnedGO.Name = card.DisplayName;
 
-		// Set the preset BEFORE the clone's OnStart fires (happens next frame in s&box)
+		// 3. Apply the preset BEFORE waking the enemy up
 		var enemy = spawnedGO.Components.Get<Enemy>( FindMode.EnabledInSelfAndDescendants );
 		if ( enemy != null )
+		{
 			enemy.PresetOverride = card.MobPresetId;
+		}
 
+		// 4. Now enable the cloned GameObject
 		spawnedGO.Enabled = true;
 
-		_credits       -= card.Cost;
-		_cooldownTimer  = SpawnCooldown;
+		_credits -= card.Cost;
+		_cooldownTimer = SpawnCooldown;
 
-		Log.Info( $"[SpawnDirector] Spawned {card.DisplayName} (cost {card.Cost}) | credits left: {_credits:F1} | cap: {liveEnemies + 1}/{EnemyCap} | diff: {Difficulty:F2}" );
+		Log.Info( $"[SpawnDirector] Spawned {card.DisplayName} (cost {card.Cost}) | credits left: {_credits:F1}" );
 	}
 
 	// ============ HELPERS ============

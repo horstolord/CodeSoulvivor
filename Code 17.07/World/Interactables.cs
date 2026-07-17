@@ -15,7 +15,7 @@ public sealed class DamageTrigger : Component, Component.ITriggerListener
 
 		Log.Info( $"{other.GameObject.Name} hat den Trigger betreten!" );
 
-		// Rufe deine ApplyDamage-Methode auf und übergib das getroffene GameObject
+		// Rufe ApplyDamage-Methode auf und übergib das getroffene GameObject
 		ApplyDamage( other.GameObject );
 	}
 
@@ -27,14 +27,6 @@ public sealed class DamageTrigger : Component, Component.ITriggerListener
 		// Variante A: Falls dein Ziel das s&box-eigene IDamageable-Interface nutzt
 		if ( target.Components.TryGet<IDamageable>( out var damageable ) )
 		{
-			// Nutze die passende Schadensstruktur deines Projekts (z. B. DamageInfo)
-			// damageable.OnDamage( new DamageInfo { Damage = DamageAmount } );
-		}
-
-		// Variante B: Falls du eine eigene benutzerdefinierte Komponente (z. B. "HealthComponent") hast
-	
-		{
-			// health.TakeDamage( DamageAmount );
 		}
 	}
 }

@@ -68,29 +68,21 @@ public sealed class Enemy : Actor
 			float speed = StatSheet?.MoveSpeed?.Value ?? 120f;
 			wishVelocity = direction * speed;
 		}
-		// Smoothly decay knockback over time
-		
 		// Move using S&box's CharacterController
 		if ( _controller != null )
 		{
-			// Combine voluntary movement and involuntary knockback
-			_controller.Velocity = wishVelocity + _knockbackVelocity;
-			// Apply gravity if in the air
-			if ( !_controller.IsOnGround )
-			{
-				_controller.Velocity += Scene.PhysicsWorld.Gravity * Time.Delta;
-			}
-			_controller.Move();
+			_controller.Velocity = wishVelocity ;
 		}
 		else
 		{
 			// Fallback direct movement in case CharacterController is missing
 			GameObject.WorldPosition += (wishVelocity + _knockbackVelocity) * Time.Delta;
 		}
-		// Try to attack the player when in range and cooldown is ready
+		// Hardcoded prototype - attack the player when in range and cooldown is ready
 		if ( distance <= AttackRange && _attackCooldownTimer <= 0f )
 		{
 			TryPerformAttack(AttackData.Punch);
+			_attackCooldownTimer += AttackData.Punch.CooldownTime;
 		}
 	}
 	private void FindPlayerTarget()

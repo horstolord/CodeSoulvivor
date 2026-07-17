@@ -72,10 +72,7 @@ public class StatSheet : Component
 	public Stat CostMultiplier { get; private set; } // Health/stamina/energy cost 100 = 1.0x
 	public Stat EffectDuration { get; private set; } // How long buffs/debuffs last (percent)
 	public Stat EffectPotency { get; private set; } // How strong buffs/debuffs are (percent)
-
-	/// Initialization is driven externally by the <see cref="Sandbox.Code.Actors.Actor"/> via
-	/// <see cref="InitializeFromRegistry"/>. This OnStart is intentionally left minimal.
-	/// </summary>
+	
 	protected override void OnStart()
 	{
 		base.OnStart();

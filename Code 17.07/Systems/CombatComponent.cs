@@ -102,10 +102,6 @@ public sealed class CombatComponent : Component
 	    Log.Info( $"Starting attack: {context.Attack.DisplayName} (health cost={context.HealthCost}, stamina cost={context.StaminaCost}, energy cost={context.EnergyCost})" );
 	   
     }
-
-    
-    
-
     private void UpdateCurrentAttack()
     {
 	    if ( CurrentAttack == null )
@@ -172,30 +168,23 @@ public sealed class CombatComponent : Component
     private void ApplyHit( AttackContext context, GameObject target )
     {
 	    var actor = ResolveActor( target );
+	    var knockbackDirection = (context.Facing.Forward + Vector3.Up / 2f).Normal;
 	    actor?.ApplyDamage( context.Damage );
 
 	    var _body = target.Components.GetInAncestorsOrSelf<Rigidbody>();
-	    if ( _body != null )
-		    if ( actor is Enemy enemy )
-		    {
-			    // Apply knockback impulse at 45 degrees (forward + upward)
-			    var knockbackDirection = ( context.Facing.Forward + Vector3.Up ).Normal;
-			    _body.ApplyImpulse( knockbackDirection * context.Damage.KnockbackForce );
-		    }
-		    else
-		    {
-			    Log.Info( $"Attack hit {target.Name}, but no Rigidbody was found." );
-			    var body = target.Components.GetInAncestorsOrSelf<Rigidbody>();
-			    if ( _body != null )
-			    {
-				    var impulseDirection = context.Facing.Forward.Normal;
-				    _body.ApplyImpulse( impulseDirection * context.Damage.KnockbackForce );
-			    }
-			    else
-			    {
-				    Log.Info( $"Attack hit {target.Name}, but no Rigidbody was found." );
-			    }
-		    }
+	    var controller = target.Components.GetInAncestorsOrSelf<CharacterController>();
+
+	    // 1. If it's a character (like the player), use Punch
+	    if ( controller != null )
+	    {
+		    controller.Punch( knockbackDirection * context.Damage.KnockbackForce );
+	    }
+	    // 2. If it's a standard physics body, use ApplyImpulse
+	    else if ( _body != null )
+	    {
+		    _body.ApplyImpulse( knockbackDirection * context.Damage.KnockbackForce );
+	    }
+	    // 3. If it is static environment geometry, both are null and we do nothing safely
     }
 
     private Actor ResolveActor( GameObject gameObject )

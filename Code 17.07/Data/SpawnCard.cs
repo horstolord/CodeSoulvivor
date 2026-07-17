@@ -36,9 +36,9 @@ public static class SpawnCardRegistry
 		{
 			MobPresetId   = "orc",
 			DisplayName   = "Orc Berserker",
-			Cost          = 25f,
-			Weight        = 1f,
-			MinDifficulty = 1.5f,  // unlocks ~5 minutes in
+			Cost          = 10f,
+			Weight        = 3f,
+			MinDifficulty = 0f,  // unlocks ~5 minutes in
 		},
 	};
 }

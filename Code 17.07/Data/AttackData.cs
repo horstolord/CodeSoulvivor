@@ -64,9 +64,9 @@ public static class AttackData
 	{
 		Id = "punch",
 		DisplayName = "Punch",
-		StartupTime = 0.10f,
-		RecoveryTime = 0.5f,
-		CooldownTime = 0.50f,
+		StartupTime = 0.4f,
+		RecoveryTime = 0.4f,
+		CooldownTime = 1f,
 		StaminaCost = 5f,
 		Damage = new DamageProfileDef
 		{

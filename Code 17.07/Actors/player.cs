@@ -7,6 +7,7 @@ public sealed class Player : Actor
 	
 	public static Player Local { get; private set; }
 	[Property] public SkinnedModelRenderer BodyRenderer { get; set; }
+	private Vector3 _knockbackVelocity;
 
 	// Load the "player" / hero stat preset from MobRegistry
 	protected override string GetMobPresetId() => "player";
@@ -14,6 +15,7 @@ public sealed class Player : Actor
 	protected override void OnStart()
 	{
 		base.OnStart();
+		MobRegistry.Initialize();
 		Local = this;
 		Combat = GameObject.Components.Get<CombatComponent>();
 		BodyRenderer ??= Components.GetInChildren<SkinnedModelRenderer>();
@@ -23,15 +25,21 @@ public sealed class Player : Actor
 		{
 			Log.Info( $"Found renderer: {r.GameObject.Name}" );
 		}
-		BodyRenderer ??= Components.GetInChildren<SkinnedModelRenderer>();
 		Log.Info( $"Assigned renderer: {BodyRenderer?.GameObject?.Name ?? "NULL"}" );
-		// MobRegistry.Initialize() is handled by Actor.OnStart via InitializeFromRegistry
+		
 	}
 	protected override void OnUpdate()
 	{
 		base.OnUpdate();
-		HandleCombatInput();
-		Local = this;
+		if ( Combat.CurrentAttack == null )
+		{
+			HandleCombatInput();	
+		}
+	}
+
+	public void ApplyKnockback( Vector3 direction, float knockbackAmount )
+	{
+		_knockbackVelocity += direction.Normal * knockbackAmount;
 	}
 	private async void HandleCombatInput()
 	{

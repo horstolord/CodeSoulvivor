@@ -29,7 +29,6 @@ public class Actor : Component
 		StatSheet = Components.GetOrCreate<StatSheet>();
 
 		// 2. Load preset and initialize stats
-		MobRegistry.Initialize();
 		var presetId = GetMobPresetId();
 		if ( !MobRegistry.Library.TryGetValue( presetId, out _mobData ) )
 		{
