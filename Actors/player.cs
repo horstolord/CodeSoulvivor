@@ -61,6 +61,10 @@ public sealed class Player : Actor
 		{
 			TryPerformAttack( AttackData.Kick );
 		}
+		if ( Input.Keyboard.Pressed( "R" ) )
+		{
+			TryPerformAttack( AttackData.Shoot );
+		}
 	}
 	private void TryPerformAttack( AttackDef attack )
 	{

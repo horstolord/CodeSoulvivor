@@ -7,6 +7,8 @@ public sealed class CombatComponent : Component
 	public AttackContext? CurrentAttack { get; private set; }
 	private float AttackElapsed;
 	private HashSet<GameObject> _hitObjects = new();
+	[Property] public GameObject ArrowPrefab { get; set; }
+	[Property] public Vector3 ProjectileSpawnOffset { get; set; } = new Vector3( 0f, 0f, 60f );
     public bool TryStartAttack( AttackRequest request )
     {
         var context = BuildContext( request );
@@ -93,14 +95,54 @@ public sealed class CombatComponent : Component
         }
         return true;
     }
+    
     private void StartAttack( AttackContext context )
     {
-        CurrentAttack = context;
-        AttackElapsed = 0f;
-        _hitObjects.Clear();
-        ResolveActor( context.Attacker )?.PayCost( context.Attack );
+	    CurrentAttack = context;
+	    AttackElapsed = 0f;
+	    _hitObjects.Clear();
+	    ResolveActor( context.Attacker )?.PayCost( context.Attack );
+
+	    if ( context.Attack.ProjectileTemplate != null )
+		    SpawnProjectile( context );
+
 	    Log.Info( $"Starting attack: {context.Attack.DisplayName} (health cost={context.HealthCost}, stamina cost={context.StaminaCost}, energy cost={context.EnergyCost})" );
-	   
+    }
+
+    private void SpawnProjectile( AttackContext context )
+    {
+	    if ( ArrowPrefab == null || !ArrowPrefab.IsValid() )
+	    {
+		    Log.Warning( "[CombatComponent] No ArrowPrefab assigned for projectile attack." );
+		    return;
+	    }
+
+	    var spawnTransform = new Transform( context.Origin+ProjectileSpawnOffset, context.Facing );
+	    var config = new CloneConfig( spawnTransform, null, true );
+	    var projGO = ArrowPrefab.Clone( config );
+	    Log.Info( $"Cloned: {projGO.Name}, valid={projGO.IsValid()}" );
+	    var projectile = projGO.Components.Get<Projectile>( FindMode.EnabledInSelfAndDescendants );
+	    if ( projectile == null )
+	    {
+		    Log.Warning( "[CombatComponent] ArrowPrefab has no Projectile component." );
+		    projGO.Destroy();
+		    return;
+	    }
+
+	    var template = context.Attack.ProjectileTemplate.Clone();
+	    var attacker = ResolveActor( context.Attacker );
+	    if ( attacker != null )
+		    template.Lifetime *= attacker.StatSheet.EffectDuration.Value / 100f;
+
+	    projectile.Template = template;
+	    projectile.Payload = new ProjectilePayload
+	    {
+		    Caster = context.Attacker,
+		    Damage = context.Damage,
+		    SourceContext = context
+	    };
+
+	    projGO.Enabled = true;
     }
     private void UpdateCurrentAttack()
     {

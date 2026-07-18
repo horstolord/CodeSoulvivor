@@ -26,7 +26,6 @@ public class AttackContext
 	public List<HitPhaseDef> HitPhases = new();
 	public HashSet<AttackTag> Tags = new();
 	public string AnimationName;
-	public MovieResource AttackAnimation { get; set; }
 	public bool LockFacing;
 	public bool CanMoveDuringStartup;
 	public bool CanMoveDuringRecovery;

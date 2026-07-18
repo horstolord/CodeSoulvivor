@@ -60,6 +60,7 @@ public static class AttackData
 			}
 		}
 	};
+
 	public static AttackDef Punch => new AttackDef
 	{
 		Id = "punch",
@@ -68,31 +69,24 @@ public static class AttackData
 		RecoveryTime = 0.4f,
 		CooldownTime = 1f,
 		StaminaCost = 5f,
-		Damage = new DamageProfileDef
-		{
-			HealthDamage = 5f,
-			StaminaDamage = 5f,
-			StaggerDamage = 18f,
-			KnockbackForce = 100f
-		},
-		Scaling = new AttributeScalingDef
-		{
-			MightToHealthDamage = 2f,
-			MightToStaminaDamage = 1f,
-			MightToStaggerDamage = 3f,
-			MightToKnockbackForce = 50f
-		},
+		Damage =
+			new DamageProfileDef
+			{
+				HealthDamage = 5f, StaminaDamage = 5f, StaggerDamage = 18f, KnockbackForce = 100f
+			},
+		Scaling =
+			new AttributeScalingDef
+			{
+				MightToHealthDamage = 2f,
+				MightToStaminaDamage = 1f,
+				MightToStaggerDamage = 3f,
+				MightToKnockbackForce = 50f
+			},
 		AnimationName = "b_attack",
 		LockFacing = true,
 		CanMoveDuringStartup = false,
 		CanMoveDuringRecovery = false,
-		Tags = new HashSet<AttackTag>
-		{
-			AttackTag.Melee,
-			AttackTag.Unarmed,
-			AttackTag.Strike
-		},
-		
+		Tags = new HashSet<AttackTag> { AttackTag.Melee, AttackTag.Unarmed, AttackTag.Strike },
 		HitPhases = new List<HitPhaseDef>
 		{
 			new HitPhaseDef
@@ -111,6 +105,34 @@ public static class AttackData
 					}
 				}
 			}
+		}
+	};
+	public static AttackDef Shoot => new AttackDef
+	{
+		Id = "shoot",
+		DisplayName = "Shoot Arrow",
+		StartupTime = 0.15f,
+		RecoveryTime = 0.25f,
+		CooldownTime = 0.5f,
+		StaminaCost = 8f,
+		Damage = new DamageProfileDef
+		{
+			HealthDamage = 8f,
+			StaggerDamage = 5f,
+			KnockbackForce = 40f
+		},
+		Scaling = new AttributeScalingDef { MightToHealthDamage = 1f },
+		AnimationName = "attack_shoot",
+		LockFacing = true,
+		CanMoveDuringStartup = false,
+		CanMoveDuringRecovery = false,
+		Tags = new HashSet<AttackTag> { AttackTag.Ranged, AttackTag.Projectile },
+		HitPhases = new List<HitPhaseDef>(),
+		ProjectileTemplate = new ProjectileTemplate
+		{
+			Termination = ProjectileTerminationType.Infinite,
+			CollisionBoxSize = new Vector3( 6f, 6f, 6f ),
+			Speed = 3000f
 		}
 	};
 }

@@ -88,7 +88,6 @@ public class StatSheet : Component
 		}
 
 		// 2. Fill this actor's own copies with the template's numbers
-		// (Assuming your 'Stat' constructor takes a float value)
 		Might = new Stat( templateData.Might );
 		Swiftness = new Stat( templateData.Swiftness);
 		Endurance = new Stat( templateData.Endurance );

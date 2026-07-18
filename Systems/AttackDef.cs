@@ -64,6 +64,7 @@ public class AttackDef
 	public bool LockFacing;
 	public bool CanMoveDuringStartup;
 	public bool CanMoveDuringRecovery;
+	public ProjectileTemplate ProjectileTemplate; //null=melee
 }
 public class AttributeScalingDef
 {

@@ -77,7 +77,7 @@ public class SpawnDirector : Component
 		int liveEnemies = Scene.GetAllComponents<Enemy>().Count();
 		if ( liveEnemies >= EnemyCap ) return;
 
-		// Filter to difficulty eligible cards (preventing the credit poverty trap)
+		// Filter to difficulty eligible cards 
 		var eligible = SpawnCardRegistry.All
 			.Where( c => c.MinDifficulty <= Difficulty )
 			.ToList();
@@ -105,10 +105,14 @@ public class SpawnDirector : Component
 		spawnedGO.Name = card.DisplayName;
 
 		// 3. Apply the preset BEFORE waking the enemy up
-		var enemy = spawnedGO.Components.Get<Enemy>( FindMode.EnabledInSelfAndDescendants );
+		var enemy = spawnedGO.Components.Get<Enemy>( FindMode.EverythingInSelfAndDescendants );
 		if ( enemy != null )
 		{
 			enemy.PresetOverride = card.MobPresetId;
+		}
+		else
+		{
+			Log.Warning( $"[SpawnDirector] Could not find Enemy component on cloned prefab for {card.DisplayName}!" );
 		}
 
 		// 4. Now enable the cloned GameObject
