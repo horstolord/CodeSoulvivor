@@ -27,7 +27,7 @@ public static class AttackData
 			MightToHealthDamage = 2f,
 			MightToStaminaDamage = 1f,
 			MightToStaggerDamage = 3f,
-			MightToKnockbackForce = 150f
+			MightToKnockbackForce = 100f
 		},
 		AnimationName = "attack_kick",
 		LockFacing = true,
@@ -119,9 +119,9 @@ public static class AttackData
 		{
 			HealthDamage = 8f,
 			StaggerDamage = 5f,
-			KnockbackForce = 40f
+			KnockbackForce = 100f
 		},
-		Scaling = new AttributeScalingDef { MightToHealthDamage = 1f },
+		Scaling = new AttributeScalingDef { MightToHealthDamage = 1f, MightToKnockbackForce = 50f },
 		AnimationName = "attack_shoot",
 		LockFacing = true,
 		CanMoveDuringStartup = false,
@@ -130,9 +130,9 @@ public static class AttackData
 		HitPhases = new List<HitPhaseDef>(),
 		ProjectileTemplate = new ProjectileTemplate
 		{
-			Termination = ProjectileTerminationType.Infinite,
+			Termination = ProjectileTerminationType.FirstHit,
 			CollisionBoxSize = new Vector3( 6f, 6f, 6f ),
-			Speed = 3000f
+			Speed = 1500f
 		}
 	};
 }

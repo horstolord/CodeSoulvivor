@@ -39,6 +39,8 @@ public sealed class Projectile : Component
     private int _hitCount;
     private Vector3 _lastPosition;
 
+    public bool IsStuck { get; private set; }
+
     protected override void OnStart()
     {
         base.OnStart();
@@ -47,7 +49,7 @@ public sealed class Projectile : Component
 
     protected override void OnFixedUpdate()
     {
-        if ( Template == null || Payload == null ) return;
+        if ( Template == null || Payload == null || IsStuck ) return;
 
         _age += Time.Delta;
         if ( Template.Termination != ProjectileTerminationType.Infinite && _age >= Template.Lifetime )
@@ -66,11 +68,11 @@ public sealed class Projectile : Component
 
         foreach ( var hit in hits )
         {
-            if ( hit.GameObject == null ) continue;
+            if ( hit.GameObject == null || hit.GameObject.Tags.Has( "noarrow" )  ) continue; 
             OnHit( hit.GameObject );
             if ( ShouldTerminateAfterHit() )
             {
-                GameObject.Destroy();
+                StickTo( hit.GameObject );
                 break;
             }
         }
@@ -78,11 +80,53 @@ public sealed class Projectile : Component
         _lastPosition = GameObject.WorldPosition;
     }
 
+    public void StickTo( GameObject target )
+    {
+        if ( IsStuck ) return;
+        IsStuck = true;
+
+        // Penetrate slightly into hit surface
+        GameObject.WorldPosition += GameObject.WorldRotation.Forward * 5f;
+
+        // Disable physics/colliders if attached to projectile prefab
+        if ( Components.TryGet<Rigidbody>( out var rb ) ) rb.MotionEnabled = false;
+        if ( Components.TryGet<Collider>( out var col ) ) col.Enabled = false;
+
+        // Attach to the hit object (environment or enemy)
+        if ( target.IsValid() )
+        {
+            GameObject.SetParent( target, true );
+        }
+    }
+
     private void OnHit( GameObject target )
     {
         var actor = target.Components.GetInAncestorsOrSelf<Actor>();
+        var rb = target.Components.GetInAncestorsOrSelf<Rigidbody>();
+        var cc = target.Components.GetInAncestorsOrSelf<CharacterController>();
+
+        var knockbackDirection = (GameObject.WorldRotation.Forward + Vector3.Up / 2f).Normal;
         actor?.ApplyDamage( Payload.Damage );
+
+        if ( cc != null )
+        {
+            cc.Punch( knockbackDirection * Payload.Damage.KnockbackForce );
+        }
+        else if ( rb != null )
+        {
+            rb.ApplyImpulse( knockbackDirection * Payload.Damage.KnockbackForce );
+        }
+
         _hitCount++;
+
+        // Trigger Rune Sub-Spell Execution
+        if ( Payload?.SourceContext is SpellContext spellCtx && spellCtx.TriggerPayloadRunes != null && spellCtx.TriggerPayloadRunes.Count > 0 )
+        {
+            var hitPos = GameObject.WorldPosition;
+            var hitNormal = -GameObject.WorldRotation.Forward;
+            RuneEvaluator.ExecuteTriggerPayload( spellCtx, hitPos, hitNormal, target );
+        }
+
         // TODO: MaterialData / InteractionOverrides lookup goes here later
     }
 

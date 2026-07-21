@@ -68,22 +68,22 @@ public class Actor : Component
 	}
 
 	// ============ COMBAT COSTS ============
-	public bool CanPayCost( AttackDef attack )
+	public bool CanPayCost( ICostable cost )
 	{
-		var cost = attack.StaminaCost * (StatSheet.CostMultiplier.Value / 100f);
-		return StatSheet.CurrentHealth > attack.HealthCost
-		       && StatSheet.CurrentStamina >= cost
-		       && StatSheet.CurrentEnergy >= attack.EnergyCost;
+		var staminaCost = cost.StaminaCost * (StatSheet.CostMultiplier.Value / 100f);
+		return StatSheet.CurrentHealth > cost.HealthCost
+		       && StatSheet.CurrentStamina >= staminaCost
+		       && StatSheet.CurrentEnergy >= cost.EnergyCost;
 	}
 
-	public void PayCost( AttackDef attack )
+	public void PayCost( ICostable cost )
 	{
-		var staminaCost = attack.StaminaCost * (StatSheet.CostMultiplier.Value / 100f);
+		var staminaCost = cost.StaminaCost * (StatSheet.CostMultiplier.Value / 100f);
 
-		if ( attack.HealthCost > 0f )
-			StatSheet.CurrentHealth = MathF.Max( 1f, StatSheet.CurrentHealth - attack.HealthCost );
+		if ( cost.HealthCost > 0f )
+			StatSheet.CurrentHealth = MathF.Max( 1f, StatSheet.CurrentHealth - cost.HealthCost );
 		StatSheet.CurrentStamina = MathF.Max( 0f, StatSheet.CurrentStamina - staminaCost );
-		StatSheet.CurrentEnergy  = MathF.Max( 0f, StatSheet.CurrentEnergy  - attack.EnergyCost );
+		StatSheet.CurrentEnergy  = MathF.Max( 0f, StatSheet.CurrentEnergy  - cost.EnergyCost );
 	}
 
 	// ============ DAMAGE ============

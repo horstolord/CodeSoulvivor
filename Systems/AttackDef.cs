@@ -46,16 +46,16 @@ public enum AttackTag
 	Air,
 	Earth
 }
-public class AttackDef
+public class AttackDef : ICostable
 {
 	public string Id;
 	public string DisplayName;
 	public float StartupTime;
 	public float RecoveryTime;
 	public float CooldownTime;
-	public float HealthCost;
-	public float StaminaCost;
-	public float EnergyCost;
+	public float HealthCost { get; set; }
+	public float StaminaCost { get; set; }
+	public float EnergyCost { get; set; }
 	public DamageProfileDef Damage;
 	public AttributeScalingDef Scaling;
 	public List<HitPhaseDef> HitPhases = new();
