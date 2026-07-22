@@ -36,11 +36,7 @@ public sealed class Player : Actor
 			HandleCombatInput();	
 		}
 	}
-
-	public void ApplyKnockback( Vector3 direction, float knockbackAmount )
-	{
-		_knockbackVelocity += direction.Normal * knockbackAmount;
-	}
+	
 	private async void HandleCombatInput()
 	{
 		if ( Combat == null )

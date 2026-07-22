@@ -19,21 +19,26 @@ public class SoulOrb : Component
 	[Property] public float HomingRadius   { get; set; } = 350f;  // start homing distance
 	[Property] public float HomingSpeed    { get; set; } = 200f;  // units per second
 	[Property] public float Lifetime       { get; set; } = 25f;   // seconds before despawn
+	// Prefab loaded from code — no editor assignment needed
 
 	// ============ RUNTIME ============
 	private float        _age       = 0f;
 	private Actor        _target    = null;
-	private ModelRenderer _renderer;
 
 	protected override void OnStart()
 	{
-		base.OnStart();
-
-		// Placeholder visual: small white sphere
-		_renderer             = Components.Create<ModelRenderer>();
-		_renderer.Model       = Model.Load( "models/dev/sphere.vmdl_c" );
-		_renderer.LocalScale  = new Vector3( 0.18f, 0.18f, 0.18f );
-		// Tint is set after creation if needed; leave white for now
+		// In s&box, Assets/ is the filesystem root — paths must NOT include "assets/" prefix.
+		// ResourceLibrary.Get throws if not found; TryGet returns false silently.
+		if ( ResourceLibrary.TryGet<PrefabFile>( "soulsprite.prefab", out var prefabFile ) )
+		{
+			var spriteInstance = SceneUtility.GetPrefabScene( prefabFile ).Clone();
+			spriteInstance.Parent = GameObject;
+			spriteInstance.LocalPosition = Vector3.Zero;
+		}
+		else
+		{
+			Log.Warning( "[SoulOrb] Could not find soulsprite.prefab in ResourceLibrary!" );
+		}
 	}
 
 	protected override void OnUpdate()

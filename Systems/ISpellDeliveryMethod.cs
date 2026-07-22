@@ -69,6 +69,7 @@ public class BeamDeliveryMethod : ISpellDeliveryMethod
 {
 	public void Deliver( SpellPayload payload )
 	{
+		
 		var ctx = payload.Context;
 		if ( ctx == null || !ctx.Caster.IsValid() ) return;
 
@@ -89,6 +90,19 @@ public class BeamDeliveryMethod : ISpellDeliveryMethod
 			StaminaDamage = ctx.AccumulatedDamage.StaminaDamage,
 			KnockbackForce = ctx.AccumulatedDamage.KnockbackForce
 		};
+		// In s&box, Assets/ is the filesystem root — paths must NOT include "assets/" prefix.
+		// ResourceLibrary.Get throws if not found; TryGet returns false silently.
+		if ( ResourceLibrary.TryGet<PrefabFile>( "beamblue.prefab", out var prefabFile ) )
+		{
+			var beamInstance = SceneUtility.GetPrefabScene( prefabFile ).Clone();
+			// Place it at the cast origin, aimed in the fire direction
+			beamInstance.WorldPosition = ctx.Origin;
+			beamInstance.WorldRotation = Rotation.LookAt( ctx.AimDirection );
+		}
+		else
+		{
+			Log.Warning( $"[BeamDelivery] Could not find beamblue.prefab in ResourceLibrary!" );
+		}
 
 		if ( tr.Hit && tr.GameObject.IsValid() )
 		{
