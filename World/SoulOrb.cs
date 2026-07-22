@@ -31,7 +31,7 @@ public class SoulOrb : Component
 
 		// Placeholder visual: small white sphere
 		_renderer             = Components.Create<ModelRenderer>();
-		_renderer.Model       = Model.Load( "models/primitives/sphere.vmdl" );
+		_renderer.Model       = Model.Load( "models/dev/sphere.vmdl_c" );
 		_renderer.LocalScale  = new Vector3( 0.18f, 0.18f, 0.18f );
 		// Tint is set after creation if needed; leave white for now
 	}
@@ -47,8 +47,8 @@ public class SoulOrb : Component
 			return;
 		}
 
-		// Gentle bob so it's visible
-		float bobOffset = MathF.Sin( _age * 3f ) * 6f;
+		// Gentle bob so it's visible 
+		float bobOffset = MathF.Sin( _age * 6f ) * 120f;
 		GameObject.LocalPosition = GameObject.LocalPosition.WithZ(
 			GameObject.LocalPosition.z + bobOffset * Time.Delta
 		);

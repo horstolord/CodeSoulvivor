@@ -28,13 +28,30 @@ public class Actor : Component
 		// 1. Stat sheet — create if not already present
 		StatSheet = Components.GetOrCreate<StatSheet>();
 
-		// 2. Load preset and initialize stats
+		// Starten der asynchronen Initialisierung im Hintergrund
+		_ = InitializeActorAsync();
+	}
+
+	private async System.Threading.Tasks.Task InitializeActorAsync()
+	{
 		var presetId = GetMobPresetId();
-		if ( !MobRegistry.Library.TryGetValue( presetId, out _mobData ) )
+		int retries = 0;
+
+		// Warte bis zu 5 Sekunden (50 Ticks * 100ms), falls die Registry beim 1. Start noch lädt
+		while ( !MobRegistry.Library.TryGetValue( presetId, out _mobData ) && retries < 50 )
 		{
-			Log.Error( $"{GameObject.Name}: Preset '{presetId}' not found in MobRegistry." );
+			await System.Threading.Tasks.Task.Delay( 100 );
+			retries++;
+		}
+
+		// Falls es selbst nach dem Warten nicht existiert
+		if ( _mobData == null )
+		{
+			Log.Error( $"{GameObject.Name}: Preset '{presetId}' absolut nicht in MobRegistry gefunden." );
 			return;
 		}
+
+		// 2. Jetzt sicher laden und Werte initialisieren
 		StatSheet.InitializeFromRegistry( presetId );
 
 		// 3. Level component — wire up level-up callback
@@ -129,7 +146,7 @@ public class Actor : Component
 	protected override void OnUpdate()
 	{
 		base.OnUpdate();
-		if ( StatSheet == null ) return;
+		if ( StatSheet == null || _mobData == null ) return;
 		Regenerate( Time.Delta );
 	}
 

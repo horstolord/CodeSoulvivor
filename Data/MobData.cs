@@ -56,6 +56,7 @@ public static class MobRegistry
 
 	public static void Initialize()
 	{
+		
 		Library["player"] = new MobData
 		{
 			Name          = "Hero",

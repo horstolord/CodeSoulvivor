@@ -42,6 +42,8 @@ public class ProjectileDeliveryMethod : ISpellDeliveryMethod
 		projGo.WorldPosition = ctx.Origin;
 		projGo.WorldRotation = rot;
 
+		// Attach BallMotion so the projectile ticks forward every frame!
+		projGo.Components.Create<BallMotion>();
 		var projComp = projGo.Components.Create<Projectile>();
 
 		var damageDef = new DamageProfileDef
@@ -70,29 +72,33 @@ public class BeamDeliveryMethod : ISpellDeliveryMethod
 		var ctx = payload.Context;
 		if ( ctx == null || !ctx.Caster.IsValid() ) return;
 
-		var range = payload.BeamRange > 0 ? payload.BeamRange : 1000f;
+		var range = payload.BeamRange > 0 ? payload.BeamRange : 3000f;
+		var endPos = ctx.Origin + ctx.AimDirection * range;
+
 		var tr = ctx.Caster.Scene.Trace
-			.Ray( ctx.Origin, ctx.Origin + ctx.AimDirection * range )
+			.Ray( ctx.Origin, endPos )
 			.IgnoreGameObjectHierarchy( ctx.Caster )
 			.Run();
 
+		var targetPos = tr.Hit ? tr.EndPosition : endPos;
+
+		var damageDef = new DamageProfileDef
+		{
+			HealthDamage = ctx.AccumulatedDamage.HealthDamage * ctx.DamageMultiplier,
+			StaggerDamage = ctx.AccumulatedDamage.StaggerDamage,
+			StaminaDamage = ctx.AccumulatedDamage.StaminaDamage,
+			KnockbackForce = ctx.AccumulatedDamage.KnockbackForce
+		};
+
 		if ( tr.Hit && tr.GameObject.IsValid() )
 		{
-			var damageDef = new DamageProfileDef
-			{
-				HealthDamage = ctx.AccumulatedDamage.HealthDamage * ctx.DamageMultiplier,
-				StaggerDamage = ctx.AccumulatedDamage.StaggerDamage,
-				StaminaDamage = ctx.AccumulatedDamage.StaminaDamage,
-				KnockbackForce = ctx.AccumulatedDamage.KnockbackForce
-			};
-
 			var actor = tr.GameObject.Components.GetInAncestorsOrSelf<Actor>();
 			actor?.ApplyDamage( damageDef );
+		}
 
-			if ( ctx.TriggerPayloadRunes != null && ctx.TriggerPayloadRunes.Count > 0 )
-			{
-				RuneEvaluator.ExecuteTriggerPayload( ctx, tr.EndPosition, tr.Normal, tr.GameObject );
-			}
+		if ( ctx.TriggerPayloadRunes != null && ctx.TriggerPayloadRunes.Count > 0 )
+		{
+			RuneEvaluator.ExecuteTriggerPayload( ctx, targetPos, tr.Normal, tr.GameObject );
 		}
 	}
 }
