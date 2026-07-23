@@ -82,7 +82,7 @@ public class SoulOrb : Component
 	private void FindOrUpdateTarget()
 	{
 		// If we already have a valid close target, keep it
-		if ( _target != null && _target.IsValid() )
+		if ( _target != null && _target.IsValid()  )
 		{
 			float dist = (_target.GameObject.WorldPosition - GameObject.WorldPosition).Length;
 			if ( dist <= HomingRadius ) return;

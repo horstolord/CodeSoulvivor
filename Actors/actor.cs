@@ -13,13 +13,14 @@ public class Actor : Component
 	/// Override in subclasses to pick a different preset.
 	/// </summary>
 	protected virtual string GetMobPresetId() => "goblin";
+	
 
 	public StatSheet      StatSheet { get; private set; }
 	public LevelComponent Leveling  { get; private set; }
 	public CombatComponent Combat;
-
 	// Cache the preset data so OnKilled can reference it without a dict lookup
 	private MobData _mobData;
+	public ActorStateComp StateComp { get; private set; }
 
 	protected override void OnStart()
 	{
@@ -27,7 +28,7 @@ public class Actor : Component
 
 		// 1. Stat sheet — create if not already present
 		StatSheet = Components.GetOrCreate<StatSheet>();
-
+		StateComp = Components.GetOrCreate<ActorStateComp>();
 		// Starten der asynchronen Initialisierung im Hintergrund
 		_ = InitializeActorAsync();
 	}
@@ -120,11 +121,19 @@ public class Actor : Component
 	}
 
 	// ============ DEATH ============
-	protected virtual void OnKilled()
+	protected virtual async void OnKilled()
 	{
+		StateComp.CurrentState = ActorStateType.Dead;
 		Log.Info( $"{GameObject.Name} killed." );
-		SpawnSoulOrb();
+		var aicomponent = GameObject.Components.GetInAncestorsOrSelf<Enemy>();
+		if ( aicomponent != null )
+		{
+			aicomponent.Enabled = false;
+		}
+		await Task.DelaySeconds(2.0f);
+		if (!this.IsValid()) return;
 		GameObject.Destroy();
+		SpawnSoulOrb();
 	}
 
 	private void SpawnSoulOrb()

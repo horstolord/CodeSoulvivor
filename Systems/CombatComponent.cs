@@ -16,6 +16,8 @@ public sealed class CombatComponent : Component
         var context = BuildContext( request );
         if ( !ValidateAttack( context ) )
             return false;
+        var actorState = ResolveActor( context.Attacker )?.StateComp;
+        // refine tag logic
         CurrentAttack = context;
         StartAttack( context );
         
@@ -221,7 +223,7 @@ public sealed class CombatComponent : Component
 	    // 1. If it's a character (like the player), use Punch
 	    if ( controller != null )
 	    {
-		    controller.Punch( knockbackDirection * context.Damage.KnockbackForce );
+		    controller.Punch( (knockbackDirection * (Vector3.Up * 2)) * context.Damage.KnockbackForce  );
 	    }
 	    // 2. If it's a standard physics body, use ApplyImpulse
 	    else if ( _body != null )

@@ -70,11 +70,12 @@ public sealed class Projectile : Component
         {
             if ( hit.GameObject == null || hit.GameObject.Tags.Has( "noarrow" )  ) continue; 
             OnHit( hit.GameObject );
-            if ( ShouldTerminateAfterHit() )
+            if ( ShouldTerminateAfterHit() && GameObject.Tags.Has( "noarrow" ) )
             {
                 StickTo( hit.GameObject );
                 break;
             }
+            GameObject.Destroy();
         }
 
         _lastPosition = GameObject.WorldPosition;
