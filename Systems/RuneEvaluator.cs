@@ -166,5 +166,6 @@ public static class RuneEvaluator
 		};
 
 		deliveryMethod.Deliver( payload );
+		
 	}
 }

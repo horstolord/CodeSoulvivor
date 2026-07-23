@@ -38,30 +38,45 @@ public class ProjectileDeliveryMethod : ISpellDeliveryMethod
 			rot *= Rotation.From( pitchOffset, yawOffset, 0 );
 		}
 
-		var projGo = new GameObject( true, "SpellProjectile" );
-		projGo.WorldPosition = ctx.Origin;
-		projGo.WorldRotation = rot;
+		var spawnTransform = new Transform( ctx.Origin, rot );
 
-		// Attach BallMotion so the projectile ticks forward every frame!
-		projGo.Components.Create<BallMotion>();
-		var projComp = projGo.Components.Create<Projectile>();
-
-		var damageDef = new DamageProfileDef
+		// Update this path to match your project's directory structure (excluding "Assets/")
+		if ( ResourceLibrary.TryGet<PrefabFile>( "fireballin'.prefab", out var prefabFile ) )
 		{
-			HealthDamage = ctx.AccumulatedDamage.HealthDamage * ctx.DamageMultiplier,
-			StaggerDamage = ctx.AccumulatedDamage.StaggerDamage,
-			StaminaDamage = ctx.AccumulatedDamage.StaminaDamage,
-			KnockbackForce = ctx.AccumulatedDamage.KnockbackForce
-		};
+			// Clone directly into the scene root (Parent = null) so it moves independently of the Caster
+			var config = new CloneConfig
+			{
+				Transform = spawnTransform,
+				Parent = null,
+				StartEnabled = true
+			};
 
-		projComp.Template = template;
-		projComp.Payload = new ProjectilePayload
+			var projGo = SceneUtility.GetPrefabScene( prefabFile ).Clone( config );
+			projGo.Name = "SpellProjectile";
+
+			Log.Info( $"[Fireballin] Spawning projectile at {ctx.Origin}" );
+
+			// Attach your motion and projectile components directly to the cloned prefab
+			projGo.Components.Create<BallMotion>();
+			var projComp = projGo.Components.Create<Projectile>();
+			var damageDef = new DamageProfileDef
+			{
+				HealthDamage = ctx.AccumulatedDamage.HealthDamage * ctx.DamageMultiplier,
+				StaggerDamage = ctx.AccumulatedDamage.StaggerDamage,
+				StaminaDamage = ctx.AccumulatedDamage.StaminaDamage,
+				KnockbackForce = ctx.AccumulatedDamage.KnockbackForce
+			};
+
+			projComp.Template = template;
+			projComp.Payload = new ProjectilePayload
+			{
+				Caster = ctx.Caster, Damage = damageDef, AttackTags = ctx.AttackTags, SourceContext = ctx
+			};
+		}
+		else
 		{
-			Caster = ctx.Caster,
-			Damage = damageDef,
-			AttackTags = ctx.AttackTags,
-			SourceContext = ctx
-		};
+			Log.Warning( "[ProjectileDelivery] Could not find fireballin'.prefab in ResourceLibrary! Make sure the folder path is correct." );
+		}
 	}
 }
 
@@ -72,10 +87,10 @@ public class BeamDeliveryMethod : ISpellDeliveryMethod
 		
 		var ctx = payload.Context;
 		if ( ctx == null || !ctx.Caster.IsValid() ) return;
-		var facing = payload.Context.Caster.WorldRotation;
+		var spawnTransform = new Transform(ctx.Origin, Rotation.LookAt(ctx.AimDirection));
 		var range = payload.BeamRange > 0 ? payload.BeamRange : 3000f;
 		var endPos = ctx.Origin + ctx.AimDirection * range;
-		var config = new CloneConfig(new Transform(ctx.Origin), ctx.Caster, false );
+		var config = new CloneConfig( spawnTransform , ctx.Caster, false );
 		var tr = ctx.Caster.Scene.Trace
 			.Ray( ctx.Origin, endPos )
 			.IgnoreGameObjectHierarchy( ctx.Caster )
@@ -98,6 +113,8 @@ public class BeamDeliveryMethod : ISpellDeliveryMethod
 			// Place it at the cast origin, aimed in the fire direct.
 			beamInstance.WorldPosition = ctx.Origin;
 			
+			beamInstance.Enabled = true;
+
 		}
 		else
 		{
