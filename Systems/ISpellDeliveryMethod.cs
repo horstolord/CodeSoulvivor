@@ -72,10 +72,10 @@ public class BeamDeliveryMethod : ISpellDeliveryMethod
 		
 		var ctx = payload.Context;
 		if ( ctx == null || !ctx.Caster.IsValid() ) return;
-
+		var facing = payload.Context.Caster.WorldRotation;
 		var range = payload.BeamRange > 0 ? payload.BeamRange : 3000f;
 		var endPos = ctx.Origin + ctx.AimDirection * range;
-
+		var config = new CloneConfig(new Transform(ctx.Origin), ctx.Caster, false );
 		var tr = ctx.Caster.Scene.Trace
 			.Ray( ctx.Origin, endPos )
 			.IgnoreGameObjectHierarchy( ctx.Caster )
@@ -94,10 +94,10 @@ public class BeamDeliveryMethod : ISpellDeliveryMethod
 		// ResourceLibrary.Get throws if not found; TryGet returns false silently.
 		if ( ResourceLibrary.TryGet<PrefabFile>( "beamblue.prefab", out var prefabFile ) )
 		{
-			var beamInstance = SceneUtility.GetPrefabScene( prefabFile ).Clone();
-			// Place it at the cast origin, aimed in the fire direction
+			var beamInstance = SceneUtility.GetPrefabScene( prefabFile ).Clone(config);
+			// Place it at the cast origin, aimed in the fire direct.
 			beamInstance.WorldPosition = ctx.Origin;
-			beamInstance.WorldRotation = Rotation.LookAt( ctx.AimDirection );
+			
 		}
 		else
 		{
@@ -123,7 +123,6 @@ public class SelfTouchDeliveryMethod : ISpellDeliveryMethod
 	{
 		var ctx = payload.Context;
 		if ( ctx == null || !ctx.Caster.IsValid() ) return;
-
 		var radius = payload.AoERadius > 0 ? payload.AoERadius : 150f;
 		var hits = ctx.Caster.Scene.Trace
 			.Sphere( radius, ctx.Origin, ctx.Origin )

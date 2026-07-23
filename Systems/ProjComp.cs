@@ -86,7 +86,7 @@ public sealed class Projectile : Component
         IsStuck = true;
 
         // Penetrate slightly into hit surface
-        GameObject.WorldPosition += GameObject.WorldRotation.Forward * 5f;
+        GameObject.WorldPosition += GameObject.WorldRotation.Forward * 3f;
 
         // Disable physics/colliders if attached to projectile prefab
         if ( Components.TryGet<Rigidbody>( out var rb ) ) rb.MotionEnabled = false;
