@@ -31,13 +31,13 @@ public sealed class Player : Actor
 	protected override void OnUpdate()
 	{
 		base.OnUpdate();
-		if ( Combat.CurrentAttack == null )
+		if ( Combat.CanAttack )
 		{
-			HandleCombatInput();	
+			HandleCombatInput();
 		}
 	}
 	
-	private async void HandleCombatInput()
+	private void HandleCombatInput()
 	{
 		if ( Combat == null )
 			return;
@@ -46,12 +46,6 @@ public sealed class Player : Actor
 			TryPerformAttack( AttackData.Punch );
 			BodyRenderer.Set( "holdtype", 5 );
 			BodyRenderer.Set( "b_attack", true );
-			await Task.DelaySeconds( 1f );
-			BodyRenderer.Set( "holdtype", 0 );
-			BodyRenderer.Set( "b_attack", false );
-			
-			
-			
 		}
 		if ( Input.Keyboard.Pressed( "F" ) )
 		{

@@ -53,7 +53,7 @@ public static class AttackData
 					{
 						CastType = HitShapeCastType.Sweep,
 						LocalOffset = new Vector3( 45f, 0f, 40f ),
-						SweepOffset = new Vector3( 30f, 0f, 0f ),
+						SweepOffset = new Vector3( 60f, 0f, 0f ),
 						BoxSize = new Vector3( 60f, 60f, 60f )
 					}
 				}
@@ -65,9 +65,9 @@ public static class AttackData
 	{
 		Id = "punch",
 		DisplayName = "Punch",
-		StartupTime = 0.4f,
-		RecoveryTime = 0.4f,
-		CooldownTime = 1f,
+		StartupTime = 0f,
+		RecoveryTime = 0.2f,
+		CooldownTime = 0.2f,
 		StaminaCost = 5f,
 		Damage =
 			new DamageProfileDef

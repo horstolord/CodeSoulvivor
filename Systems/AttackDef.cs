@@ -56,8 +56,8 @@ public class AttackDef : ICostable
 	public float HealthCost { get; set; }
 	public float StaminaCost { get; set; }
 	public float EnergyCost { get; set; }
-	public DamageProfileDef Damage;
-	public AttributeScalingDef Scaling;
+	public DamageProfileDef Damage = new();
+	public AttributeScalingDef Scaling = new();
 	public List<HitPhaseDef> HitPhases = new();
 	public HashSet<AttackTag> Tags = new();
 	public string AnimationName;

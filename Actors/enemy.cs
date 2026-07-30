@@ -19,7 +19,6 @@ public sealed class Enemy : Actor
 	[Property] public AttackDef AttackType { get; set; } // The attack type this enemy uses
 	private CharacterController _controller;
 	private Vector3 _knockbackVelocity;
-	private float _attackCooldownTimer;
 	protected override void OnStart()
 	{
 		base.OnStart();
@@ -41,11 +40,7 @@ public sealed class Enemy : Actor
 			FindPlayerTarget();
 			return;
 		}
-		// Handle attack cooldown countdowns
-		if ( _attackCooldownTimer > 0f )
-		{
-			_attackCooldownTimer -= Time.Delta;
-		}
+
 	}
 	protected override void OnFixedUpdate()
 	{
@@ -78,11 +73,10 @@ public sealed class Enemy : Actor
 			// Fallback direct movement in case CharacterController is missing
 			GameObject.WorldPosition += (wishVelocity + _knockbackVelocity) * Time.Delta;
 		}
-		// Hardcoded prototype - attack the player when in range and cooldown is ready
-		if ( distance <= AttackRange && _attackCooldownTimer <= 0f )
+		// Attack when in range and CombatComponent says we can (accounts for startup, recovery, and cooldown).
+		if ( distance <= AttackRange && Combat != null && Combat.CanAttack )
 		{
-			TryPerformAttack(AttackData.Punch);
-			_attackCooldownTimer += AttackData.Punch.CooldownTime;
+			TryPerformAttack( GetAttackType() );
 		}
 	}
 	private void FindPlayerTarget()
@@ -93,9 +87,9 @@ public sealed class Enemy : Actor
 			Target = player.GameObject;
 		}
 	}
-	private void TryPerformAttack(AttackDef attack)
+	private void TryPerformAttack( AttackDef attack )
 	{
-		if ( Combat == null || AttackType == null ) return;
+		if ( Combat == null || attack == null ) return;
 		var facing = GameObject.WorldRotation;
 		var request = new AttackRequest
 		{
@@ -108,22 +102,32 @@ public sealed class Enemy : Actor
 			TargetPoint = null,
 			Charge01 = 0f,
 			AlternateUse = false,
-			
-		
+			TriggerType = AttackTriggerType.Ai
 		};
 		if ( Combat.TryStartAttack( request ) )
 		{
-			// Put the attack on cooldown
-			_attackCooldownTimer = AttackType.CooldownTime + AttackType.StartupTime + AttackType.RecoveryTime;
-			// Play the attack animation triggers
+			// Cooldown is now fully managed by CombatComponent — no manual timer needed.
 			var bodyRenderer = Components.GetInChildren<SkinnedModelRenderer>();
 			if ( bodyRenderer != null )
 			{
 				bodyRenderer.Set( "b_attack", true );
-				// You can clear it or set holdtypes here as well, similar to your Player component
 			}
 		}
 	}
+
+	private AttackDef GetAttackType()
+	{
+		return IsConfiguredAttack( AttackType ) ? AttackType : AttackData.Punch;
+	}
+
+	private static bool IsConfiguredAttack( AttackDef attack )
+	{
+		return attack != null
+		       && !string.IsNullOrWhiteSpace( attack.Id )
+		       && attack.Damage != null
+		       && attack.Scaling != null;
+	}
+
 	/// <summary>
 	/// Custom knockback receiver. Call this when the enemy takes a hit.
 	/// </summary>
