@@ -296,9 +296,10 @@ public sealed class CombatComponent : Component
 		actor?.ApplyDamage( context.Damage );
 
 		var _body = target.Components.GetInAncestorsOrSelf<Rigidbody>();
+		var renderer = context.Attacker.Components.GetInAncestorsOrSelf<SkinnedModelRenderer>();
 		var controller = target.Components.GetInAncestorsOrSelf<CharacterController>();
 
-		// 1. If it's a character (like the player), use Punch
+		// 1. If it's a character (like the player) actually, this does nothing
 		if ( controller != null )
 		{
 			controller.Punch( (knockbackDirection + (Vector3.Up + 200)) * context.Damage.KnockbackForce );

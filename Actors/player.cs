@@ -1,6 +1,7 @@
 using Sandbox.Citizen;
 using Sandbox.Code.Data;
 using Sandbox.Code.Systems;
+using HudPanel = Sandbox.Code.Presentation.UI;
 namespace Sandbox.Code.Actors;
 public sealed class Player : Actor
 {
@@ -125,4 +126,3 @@ public sealed class Player : Actor
 	
 	
 	
-
