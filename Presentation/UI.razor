@@ -2,8 +2,10 @@
 @using Sandbox.UI;
 @using System;
 @using Sandbox.Code.Actors;
+@using Sandbox.Code.Data;
 @using Sandbox.Code.Systems;
 @inherits PanelComponent
+
 <root class="ui-root">
     <div class="hud-container">
         @if ( PlayerObject != null && PlayerObject.StatSheet != null )
@@ -12,27 +14,30 @@
             var maxHp = stats.MaxHealth?.Value ?? 100f;
             var maxStam = stats.MaxStamina?.Value ?? 100f;
             var maxNrg = stats.MaxEnergy?.Value ?? 100f;
+
             <div class="hud-bar-wrapper">
                 <div class="hud-bar-header">
-                    <div class="hud-bar-label">❤️ Health</div>
+                    <div class="hud-bar-label">Health</div>
                     <div class="hud-bar-text">@((int)stats.CurrentHealth) / @((int)maxHp) (@((int)HealthWidth)%)</div>
                 </div>
                 <div class="hud-bar-bg">
                     <div class="hud-bar-fill health" style="width: @(HealthWidth)%;"></div>
                 </div>
             </div>
+
             <div class="hud-bar-wrapper">
                 <div class="hud-bar-header">
-                    <div class="hud-bar-label">⚡ Stamina</div>
+                    <div class="hud-bar-label">Stamina</div>
                     <div class="hud-bar-text">@((int)stats.CurrentStamina) / @((int)maxStam) (@((int)StaminaWidth)%)</div>
                 </div>
                 <div class="hud-bar-bg">
                     <div class="hud-bar-fill stamina" style="width: @(StaminaWidth)%;"></div>
                 </div>
             </div>
+
             <div class="hud-bar-wrapper">
                 <div class="hud-bar-header">
-                    <div class="hud-bar-label">✨ Mana</div>
+                    <div class="hud-bar-label">Mana</div>
                     <div class="hud-bar-text">@((int)stats.CurrentEnergy) / @((int)maxNrg) (@((int)EnergyWidth)%)</div>
                 </div>
                 <div class="hud-bar-bg">
@@ -45,31 +50,194 @@
             <div class="hud-bar-label">Searching for Player Stats...</div>
         }
     </div>
+
     @if ( ActivePanel != UiPanel.None )
     {
         <div class="menu-backdrop"></div>
     }
+
     @if ( ActivePanel == UiPanel.Inventory )
     {
-        <div class="test-panel inventory-panel">
-            <div class="test-panel-title">Inventory Panel</div>
-            <div class="test-panel-body">
-                <div>Test panel offen.</div>
-                <div>Hier kommt spaeter  Inventory Grid rein.</div>
+        <div class="inventory-screen">
+            <div class="equipment-root">
+                <div class="equipment-header">
+                    <span class="title">Character Equipment</span>
+                    <span class="subtitle">Equipment System</span>
+                </div>
+
+                <div class="paperdoll-container">
+                    <div class="slot-column left">
+                        @foreach ( var equipmentSlot in LeftEquipmentSlots )
+                        {
+                            var equippedItem = InventoryState.GetEquippedItem( equipmentSlot.Slot );
+                            var hasItem = equippedItem != null;
+
+                            <div class="equip-slot @(hasItem ? equippedItem.RarityClass : "empty")"
+                                 onmousedown="@(() => InventoryState.EquipSelectedItemTo(equipmentSlot.Slot))">
+                                @if ( hasItem )
+                                {
+                                    <div class="item-icon">@equippedItem.IconGlyph</div>
+                                    <button class="unequip-btn" onclick="@(() => InventoryState.Unequip(equipmentSlot.Slot))">X</button>
+                                }
+                                else
+                                {
+                                    <div class="ghost-icon">@equipmentSlot.Ghost</div>
+                                    <span class="slot-label">@equipmentSlot.Label</span>
+                                }
+                            </div>
+                        }
+                    </div>
+
+                    <div class="paperdoll-silhouette">
+                        <div class="silhouette-head"></div>
+                        <div class="silhouette-body"></div>
+                        <div class="overlay-slots">
+                            @foreach ( var equipmentSlot in CenterEquipmentSlots )
+                            {
+                                var equippedItem = InventoryState.GetEquippedItem( equipmentSlot.Slot );
+                                var hasItem = equippedItem != null;
+
+                                <div class="equip-slot @(hasItem ? equippedItem.RarityClass : "empty")"
+                                     onmousedown="@(() => InventoryState.EquipSelectedItemTo(equipmentSlot.Slot))">
+                                    @if ( hasItem )
+                                    {
+                                        <div class="item-icon">@equippedItem.IconGlyph</div>
+                                        <button class="unequip-btn" onclick="@(() => InventoryState.Unequip(equipmentSlot.Slot))">X</button>
+                                    }
+                                    else
+                                    {
+                                        <div class="ghost-icon">@equipmentSlot.Ghost</div>
+                                        <span class="slot-label">@equipmentSlot.Label</span>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="slot-column right">
+                        @foreach ( var equipmentSlot in RightEquipmentSlots )
+                        {
+                            var equippedItem = InventoryState.GetEquippedItem( equipmentSlot.Slot );
+                            var hasItem = equippedItem != null;
+
+                            <div class="equip-slot @(hasItem ? equippedItem.RarityClass : "empty")"
+                                 onmousedown="@(() => InventoryState.EquipSelectedItemTo(equipmentSlot.Slot))">
+                                @if ( hasItem )
+                                {
+                                    <div class="item-icon">@equippedItem.IconGlyph</div>
+                                    <button class="unequip-btn" onclick="@(() => InventoryState.Unequip(equipmentSlot.Slot))">X</button>
+                                }
+                                else
+                                {
+                                    <div class="ghost-icon">@equipmentSlot.Ghost</div>
+                                    <span class="slot-label">@equipmentSlot.Label</span>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="stats-summary">
+                    <div class="summary-title">Equipment Bonuses</div>
+                    <div class="stats-grid">
+                        <div class="stat-box atk">ATK: +@InventoryState.TotalAttack</div>
+                        <div class="stat-box def">DEF: +@InventoryState.TotalDefense</div>
+                        <div class="stat-box spd">SPD: +@InventoryState.TotalSpeed</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="inventory-root">
+                <div class="inventory-header">
+                    <div class="title-wrapper">
+                        <span class="panel-title">Player Inventory</span>
+                        <span class="capacity-text">@InventoryState.UsedSlots / @InventoryState.TotalSlots Slots</span>
+                    </div>
+                    <div class="grid-badge">9x4 Grid</div>
+                </div>
+
+                <div class="inventory-grid">
+                    @foreach ( var slot in InventoryState.Slots )
+                    {
+                        <div class="inventory-slot @(slot.IsLocked ? "locked" : "") @(slot.Item != null ? slot.Item.RarityClass : "") @(InventoryState.SelectedSlotId == slot.Id ? "selected" : "")"
+                             onmousedown="@(() => InventoryState.OnSlotMouseDown(slot))"
+                             onmouseup="@(() => InventoryState.OnSlotMouseUp(slot))"
+                             onmouseover="@(() => InventoryState.SetHoveredItem(slot.Item))"
+                             onmouseout="@(() => InventoryState.SetHoveredItem(null))">
+                            @if ( slot.IsLocked )
+                            {
+                                <div class="slot-lock">LOCK</div>
+                            }
+                            else if ( slot.Item != null )
+                            {
+                                <div class="item-container">
+                                    <div class="item-icon">@slot.Item.IconGlyph</div>
+
+                                    @if ( slot.Item.Quantity > 1 )
+                                    {
+                                        <span class="item-quantity">x@slot.Item.Quantity</span>
+                                    }
+
+                                    @if ( CanEquip( slot ) )
+                                    {
+                                        <button class="slot-action" onclick="@(() => InventoryState.EquipItem(slot))">Equip</button>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="empty-dot"></div>
+                            }
+                        </div>
+                    }
+                </div>
+
+                @if ( InventoryState.HoveredItem != null )
+                {
+                    var item = InventoryState.HoveredItem;
+
+                    <div class="item-tooltip">
+                        <div class="tooltip-header">
+                            <span class="item-name @item.RarityClass">@item.Name</span>
+                            <span class="rarity-badge @item.RarityClass">@item.Rarity</span>
+                        </div>
+                        <p class="item-desc">@item.Description</p>
+
+                        @if ( item.Stats.Attack > 0 || item.Stats.Defense > 0 || item.Stats.Speed > 0 )
+                        {
+                            <div class="stats-row">
+                                @if ( item.Stats.Attack > 0 )
+                                {
+                                    <span class="stat-atk">+@item.Stats.Attack ATK</span>
+                                }
+                                @if ( item.Stats.Defense > 0 )
+                                {
+                                    <span class="stat-def">+@item.Stats.Defense DEF</span>
+                                }
+                                @if ( item.Stats.Speed > 0 )
+                                {
+                                    <span class="stat-spd">+@item.Stats.Speed SPD</span>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
             </div>
         </div>
     }
+
     @if ( ActivePanel == UiPanel.Skills )
     {
         <div class="test-panel skills-panel">
             <div class="test-panel-title">Skills Panel</div>
             <div class="test-panel-body">
-                <div>Test panel offen.</div>
-                <div>Hier kommt spaeter Skillliste / Talente rein.</div>
+                <div>Test panel open.</div>
+                <div>Skill list and talents can be wired here later.</div>
             </div>
         </div>
     }
 </root>
+
 @code
 {
     public enum UiPanel
@@ -77,17 +245,42 @@
         None,
         Inventory,
         Skills
-    } 
-    public Player PlayerObject => Player.Local;  // implement direct reading 
+    }
+
+    private readonly InventoryPanel InventoryState = new();
+
+    private readonly EquipmentSlotView[] LeftEquipmentSlots =
+    {
+        new( EquipmentSlot.Head, "Head / Helmet", "HD" ),
+        new( EquipmentSlot.Chest, "Chest Armor", "CH" ),
+        new( EquipmentSlot.Hands, "Gloves / Hands", "GL" ),
+        new( EquipmentSlot.Belt, "Waist / Belt", "BT" ),
+        new( EquipmentSlot.Feet, "Boots / Feet", "FT" )
+    };
+
+    private readonly EquipmentSlotView[] CenterEquipmentSlots =
+    {
+        new( EquipmentSlot.Amulet, "Amulet", "AM" )
+    };
+
+    private readonly EquipmentSlotView[] RightEquipmentSlots =
+    {
+        new( EquipmentSlot.MainHand1, "Main Hand", "MH" ),
+        new( EquipmentSlot.OffHand1, "Off Hand", "OH" ),
+        new( EquipmentSlot.Ring1, "Ring 1", "R1" ),
+        new( EquipmentSlot.Ring2, "Ring 2", "R2" )
+    };
+
+    public Player PlayerObject => Player.Local;
     public StatSheet PlayerStatSheet => PlayerObject?.StatSheet;
+
     [Property] private float HealthWidth { get; set; } = 100f;
     [Property] private float StaminaWidth { get; set; } = 100f;
     [Property] private float EnergyWidth { get; set; } = 100f;
     [Property] public UiPanel ActivePanel { get; set; } = UiPanel.None;
-    
+
     protected override void OnUpdate()
     {
-        
         if ( PlayerObject != null && PlayerObject.StatSheet != null )
         {
             var stats = PlayerObject.StatSheet;
@@ -98,41 +291,52 @@
             float maxNrg = stats.MaxEnergy?.Value ?? 100f;
             float targetNrg = maxNrg > 0 ? (stats.CurrentEnergy / maxNrg) * 100f : 0f;
             float lerpSpeed = 8.0f;
+
             HealthWidth = HealthWidth.LerpTo( targetHp, Time.Delta * lerpSpeed );
             StaminaWidth = StaminaWidth.LerpTo( targetStam, Time.Delta * lerpSpeed );
             EnergyWidth = EnergyWidth.LerpTo( targetNrg, Time.Delta * lerpSpeed );
         }
+
         if ( Input.Pressed( "Inventory" ) )
         {
             TogglePanel( UiPanel.Inventory );
         }
+
         if ( Input.Pressed( "Skills" ) )
         {
             TogglePanel( UiPanel.Skills );
         }
+
         if ( Input.EscapePressed && ActivePanel != UiPanel.None )
         {
             ActivePanel = UiPanel.None;
         }
     }
+
     void TogglePanel( UiPanel panel )
     {
         ActivePanel = ActivePanel == panel ? UiPanel.None : panel;
     }
+
+    bool CanEquip( InventorySlot slot )
+    {
+        return slot?.Item?.Definition?.IsEquippable == true;
+    }
+
     protected override int BuildHash()
     {
         if ( PlayerObject?.StatSheet == null )
         {
             return HashCode.Combine(
                 false,
-                ActivePanel
+                ActivePanel,
+                InventoryState.Revision
             );
         }
+
         var stats = PlayerObject.StatSheet;
         return HashCode.Combine(
-            true,
-            ActivePanel,
-            HealthWidth,
+            HashCode.Combine( true, ActivePanel, InventoryState.Revision, HealthWidth ),
             StaminaWidth,
             EnergyWidth,
             stats.CurrentHealth,
@@ -140,18 +344,22 @@
             stats.CurrentEnergy
         );
     }
+
+    private readonly record struct EquipmentSlotView( EquipmentSlot Slot, string Label, string Ghost );
 }
+
 <style>
 .ui-root {
     position: absolute;
     inset: 0;
     pointer-events: none;
+    font-family: 'Cinzel', 'Georgia', serif;
 }
+
 .hud-container {
     position: absolute;
     bottom: 40px;
     left: 40px;
-    font-family: 'Cinzel', 'Georgia', serif;
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -163,11 +371,326 @@
     min-width: 320px;
     pointer-events: none;
 }
+
 .menu-backdrop {
     position: absolute;
     inset: 0;
-    background: rgba(0, 0, 0, 0.35);
+    background: rgba(0, 0, 0, 0.42);
 }
+
+.inventory-screen {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 24px;
+    padding: 32px;
+    pointer-events: all;
+}
+
+.equipment-root,
+.inventory-root,
+.test-panel {
+    background: rgba(16, 14, 12, 0.96);
+    border: 2px solid #6b5a45;
+    border-radius: 6px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.75);
+    color: #dfd5c6;
+}
+
+.equipment-root {
+    width: 460px;
+    min-height: 560px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.inventory-root {
+    width: 620px;
+    min-height: 560px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.equipment-header,
+.inventory-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.title-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.title,
+.panel-title,
+.test-panel-title {
+    font-size: 22px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #f1e6d2;
+    text-shadow: 1px 1px 2px black;
+}
+
+.subtitle,
+.capacity-text {
+    font-size: 12px;
+    text-transform: uppercase;
+    color: #a99b89;
+}
+
+.grid-badge {
+    padding: 6px 10px;
+    border: 1px solid #735f48;
+    border-radius: 4px;
+    color: #c9bba9;
+    font-size: 12px;
+    text-transform: uppercase;
+}
+
+.paperdoll-container {
+    display: flex;
+    flex-direction: row;
+    gap: 16px;
+    flex: 1;
+}
+
+.slot-column {
+    width: 96px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.paperdoll-silhouette {
+    flex: 1;
+}
+
+.paperdoll-silhouette {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    min-height: 360px;
+    /* width controlled by flex: 1 in parent */
+}
+
+.silhouette-head {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    border: 2px solid rgba(150, 128, 96, 0.6);
+    background: rgba(80, 70, 60, 0.25);
+}
+
+.silhouette-body {
+    width: 128px;
+    height: 220px;
+    border-radius: 40px 40px 18px 18px;
+    border: 2px solid rgba(150, 128, 96, 0.6);
+    background: rgba(80, 70, 60, 0.22);
+}
+
+.overlay-slots {
+    position: absolute;
+    top: 92px;
+    display: flex;
+    gap: 8px;
+}
+
+.equip-slot,
+.inventory-slot {
+    position: relative;
+    width: 56px;
+    height: 56px;
+    border: 1px solid #574636;
+    border-radius: 6px;
+    background: rgba(28, 24, 20, 0.95);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.equip-slot {
+    width: 82px;
+    height: 64px;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.equip-slot.empty:hover,
+.inventory-slot:hover {
+    border-color: #c9a66b;
+    background: rgba(42, 35, 28, 0.98);
+}
+
+.inventory-grid {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	padding: 8px;
+}
+
+.inventory-slot {
+	width: 56px;
+	height: 64px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	position: relative;
+}
+
+.item-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.item-icon,
+.ghost-icon {
+    font-family: Arial, sans-serif;
+    font-size: 15px;
+    font-weight: bold;
+    color: #f4e6c8;
+}
+
+.ghost-icon {
+    color: #7c6d5d;
+}
+
+.slot-label {
+    max-width: 72px;
+    color: #9f9180;
+    font-size: 9px;
+    text-align: center;
+}
+
+.item-quantity {
+    position: absolute;
+    right: 4px;
+    bottom: 3px;
+    font-size: 10px;
+    color: #f0dfc3;
+}
+
+.slot-action,
+.unequip-btn {
+    position: absolute;
+    right: 3px;
+    top: 3px;
+    border: 1px solid rgba(210, 190, 150, 0.35);
+    border-radius: 3px;
+    background: rgba(20, 18, 16, 0.9);
+    color: #dfd5c6;
+    font-size: 9px;
+    padding: 2px 4px;
+}
+
+.unequip-btn {
+    width: 18px;
+    height: 18px;
+    padding: 0;
+}
+
+.empty-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(130, 113, 92, 0.5);
+}
+
+.common {
+    border-color: #80786c;
+}
+
+.magic {
+    border-color: #3f8dc5;
+}
+
+.rare {
+    border-color: #c5a13f;
+}
+
+.epic {
+    border-color: #8e59cc;
+}
+
+.legendary,
+.mythical,
+.divine {
+    border-color: #d07b39;
+}
+
+.stats-summary {
+    border-top: 1px solid #4a3e31;
+    padding-top: 14px;
+}
+
+.summary-title {
+    margin-bottom: 10px;
+    font-size: 12px;
+    color: #a99b89;
+    text-transform: uppercase;
+}
+
+.stats-grid,
+.stats-row {
+    display: flex;
+    gap: 8px;
+}
+
+.stat-box,
+.rarity-badge,
+.stats-row span {
+    padding: 6px 8px;
+    border-radius: 4px;
+    background: rgba(28, 24, 20, 0.9);
+    border: 1px solid #4f4335;
+    font-size: 12px;
+}
+
+.item-tooltip {
+    margin-top: auto;
+    padding: 12px;
+    border: 1px solid #5f4c38;
+    border-radius: 5px;
+    background: rgba(22, 19, 16, 0.98);
+}
+
+.tooltip-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+}
+
+.item-name {
+    font-weight: bold;
+    color: #f1e6d2;
+}
+
+.item-desc {
+    margin: 8px 0 0;
+    color: #c5b7a4;
+    font-size: 13px;
+}
+
 .test-panel {
     position: absolute;
     top: 10%;
@@ -176,29 +699,13 @@
     width: 720px;
     min-height: 420px;
     padding: 24px;
-    background: rgba(16, 14, 12, 0.96);
-    border: 2px solid #6b5a45;
-    border-radius: 6px;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.75);
-    color: #dfd5c6;
-    font-family: 'Cinzel', 'Georgia', serif;
     pointer-events: all;
 }
-.inventory-panel {
-    border-color: #8b6b3f;
-}
+
 .skills-panel {
     border-color: #4d6f9a;
 }
-.test-panel-title {
-    font-size: 24px;
-    font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    margin-bottom: 18px;
-    color: #f1e6d2;
-    text-shadow: 1px 1px 2px black;
-}
+
 .test-panel-body {
     display: flex;
     flex-direction: column;
@@ -206,16 +713,19 @@
     font-size: 16px;
     color: #d7cbb8;
 }
+
 .hud-bar-wrapper {
     display: flex;
     flex-direction: column;
     gap: 4px;
 }
+
 .hud-bar-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
+
 .hud-bar-label {
     font-size: 13px;
     text-transform: uppercase;
@@ -224,6 +734,7 @@
     color: #dfd5c6;
     text-shadow: 1px 1px 2px black;
 }
+
 .hud-bar-bg {
     height: 14px;
     background-color: rgba(15, 12, 10, 0.9);
@@ -233,20 +744,25 @@
     position: relative;
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6);
 }
+
 .hud-bar-fill {
     height: 100%;
     border-right: 1px solid rgba(255, 255, 255, 0.3);
     box-shadow: inset 0 1px 3px rgba(255, 255, 255, 0.2);
 }
+
 .hud-bar-fill.health {
     background: linear-gradient(to right, #6b0c0c, #b31414, #ff2a2a);
 }
+
 .hud-bar-fill.stamina {
     background: linear-gradient(to right, #1b4d1b, #2e8b2e, #47d147);
 }
+
 .hud-bar-fill.mana {
     background: linear-gradient(to right, #0a3d6b, #1063b3, #1e90ff);
 }
+
 .hud-bar-text {
     font-size: 11px;
     color: #dfd5c6;
