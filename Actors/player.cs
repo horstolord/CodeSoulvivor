@@ -44,7 +44,9 @@ public sealed class Player : Actor
 			return;
 		if ( Input.Keyboard.Pressed( "attack1" ) || Input.Keyboard.Pressed( "mouse1" ) )
 		{
-			TryPerformAttack( AttackData.Punch );
+			// Use equipped weapon attack; fall back to unarmed punch
+			var attack = Equipment?.GetWeaponAttackDef() ?? AttackData.Punch;
+			TryPerformAttack( attack );
 			BodyRenderer.Set( "holdtype", 5 );
 			BodyRenderer.Set( "b_attack", true );
 		}

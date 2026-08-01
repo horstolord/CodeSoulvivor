@@ -1,3 +1,4 @@
+using System;
 using Sandbox.MovieMaker;
 using Sandbox.MovieMaker.Compiled;
 
@@ -135,4 +136,69 @@ public static class AttackData
 			Speed = 1500f
 		}
 	};
+
+	/// <summary>
+	/// Builds a weapon-specific AttackDef from an equipped item's stats.
+	/// Timing windows are scaled by BaseAttackSpeed (1.0 = normal, 1.5 = 50% faster).
+	/// Called each time the player attacks so the def always reflects the current weapon state.
+	/// </summary>
+	public static AttackDef BuildWeaponAttack( ItemDef weapon )
+	{
+		var stats = weapon.Equipment?.Stats ?? new EquipmentStatBlock();
+		float speed = MathF.Max( 0.1f, stats.BaseAttackSpeed > 0f ? stats.BaseAttackSpeed : 1.0f );
+
+		// Scale timing: higher attack speed → shorter windows
+		float startup  = 0.25f / speed;
+		float active   = 0.18f / speed;   // half width of the hit window
+		float recovery = 0.2f / speed;
+		float cooldown = 0.3f / speed;
+
+		return new AttackDef
+		{
+			Id          = $"weapon_{weapon.Id}",
+			DisplayName = weapon.Name,
+			StartupTime  = startup,
+			RecoveryTime = recovery,
+			CooldownTime = cooldown,
+			StaminaCost  = 8f,
+			Damage = new DamageProfileDef
+			{
+				HealthDamage  = stats.BaseDamage,
+				StaggerDamage = stats.PoiseDamage,
+				StaminaDamage = 8f,
+				KnockbackForce = 100f
+			},
+			Scaling = new AttributeScalingDef
+			{
+				MightToHealthDamage    = 2f,
+				MightToStaggerDamage   = 1f,
+				MightToStaminaDamage   = 0.5f,
+				MightToKnockbackForce  = 50f
+			},
+			AnimationName  = "b_attack",
+			LockFacing     = true,
+			CanMoveDuringStartup  = false,
+			CanMoveDuringRecovery = false,
+			Tags = new HashSet<AttackTag> { AttackTag.Melee, AttackTag.Strike, AttackTag.Slash },
+			HitPhases = new List<HitPhaseDef>
+			{
+				new HitPhaseDef
+				{
+					StartTime        = 0f,
+					EndTime          = active * 2f,
+					StopAfterFirstHit = false,
+					Shapes = new List<HitShapeDef>
+					{
+						new HitShapeDef
+						{
+							CastType    = HitShapeCastType.Sweep,
+							LocalOffset = new Vector3( 40f, 0f, 40f ),
+							SweepOffset = new Vector3( 100f, 0f, 0f ),
+							BoxSize     = new Vector3( 70f, 70f, 50f )
+						}
+					}
+				}
+			}
+		};
+	}
 }

@@ -18,6 +18,7 @@ public class Actor : Component
 	public StatSheet      StatSheet { get; private set; }
 	public LevelComponent Leveling  { get; private set; }
 	public CombatComponent Combat;
+	public EquipmentControl Equipment { get; private set; }
 	// Cache the preset data so OnKilled can reference it without a dict lookup
 	private MobData _mobData;
 	public ActorStateComp StateComp { get; private set; }
@@ -28,6 +29,7 @@ public class Actor : Component
 
 		// 1. Stat sheet — create if not already present
 		StatSheet = Components.GetOrCreate<StatSheet>();
+		Equipment = Components.GetOrCreate<EquipmentControl>();
 		StateComp = Components.GetOrCreate<ActorStateComp>();
 		// Starten der asynchronen Initialisierung im Hintergrund
 		_ = InitializeActorAsync();

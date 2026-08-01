@@ -104,6 +104,10 @@ public sealed class InventoryPanel
 
         emptySlot.Item = item;
         EquippedSlots.Remove( normalizedSlot );
+
+        // Strip stat modifiers from the gameplay layer
+        Sandbox.Code.Actors.Player.Local?.Equipment?.Unequip( normalizedSlot );
+
         Revision++;
     }
 
@@ -122,6 +126,10 @@ public sealed class InventoryPanel
         }
 
         EquippedSlots[equipmentSlot] = itemToEquip;
+
+        // Forward to the gameplay EquipmentControl so stat modifiers are actually applied
+        Sandbox.Code.Actors.Player.Local?.Equipment?.Equip( itemToEquip.Definition );
+
         SelectedSlotId = null;
         draggingSlotId = null;
         Revision++;
