@@ -6,6 +6,8 @@ public class DamageProfileDef
 	public float StaggerDamage;
 	public float StaminaDamage;
 	public float KnockbackForce;
+	public HashSet<AttackTag> Tags = new();
+	public bool IsCrit;
 }
 
 public class HitPhaseDef
@@ -44,7 +46,8 @@ public enum AttackTag
 	Fire,
 	Frost,
 	Air,
-	Earth
+	Earth,
+	Physical
 }
 public class AttackDef : ICostable
 {

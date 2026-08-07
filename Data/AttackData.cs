@@ -39,7 +39,8 @@ public static class AttackData
 			AttackTag.Melee,
 			AttackTag.Unarmed,
 			AttackTag.Kick,
-			AttackTag.Strike
+			AttackTag.Strike,
+			AttackTag.Physical
 		},
 		HitPhases = new List<HitPhaseDef>
 		{
@@ -87,7 +88,7 @@ public static class AttackData
 		LockFacing = true,
 		CanMoveDuringStartup = false,
 		CanMoveDuringRecovery = false,
-		Tags = new HashSet<AttackTag> { AttackTag.Melee, AttackTag.Unarmed, AttackTag.Strike },
+		Tags = new HashSet<AttackTag> { AttackTag.Melee, AttackTag.Unarmed, AttackTag.Strike, AttackTag.Physical },
 		HitPhases = new List<HitPhaseDef>
 		{
 			new HitPhaseDef
@@ -127,7 +128,7 @@ public static class AttackData
 		LockFacing = true,
 		CanMoveDuringStartup = false,
 		CanMoveDuringRecovery = false,
-		Tags = new HashSet<AttackTag> { AttackTag.Ranged, AttackTag.Projectile },
+		Tags = new HashSet<AttackTag> { AttackTag.Ranged, AttackTag.Projectile, AttackTag.Physical },
 		HitPhases = new List<HitPhaseDef>(),
 		ProjectileTemplate = new ProjectileTemplate
 		{
@@ -179,7 +180,7 @@ public static class AttackData
 			LockFacing     = true,
 			CanMoveDuringStartup  = false,
 			CanMoveDuringRecovery = false,
-			Tags = new HashSet<AttackTag> { AttackTag.Melee, AttackTag.Strike, AttackTag.Slash },
+			Tags = new HashSet<AttackTag> { AttackTag.Melee, AttackTag.Strike, AttackTag.Slash, AttackTag.Physical },
 			HitPhases = new List<HitPhaseDef>
 			{
 				new HitPhaseDef

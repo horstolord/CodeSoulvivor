@@ -74,7 +74,9 @@ public class SpawnDirector : Component
 			return;
 		}
 
-		int liveEnemies = Scene.GetAllComponents<Enemy>().Count();
+		int liveEnemies = Scene
+			.GetAllComponents<Enemy>()
+			.Count( e => e.StateComp?.CurrentState != ActorStateType.Dead );
 		if ( liveEnemies >= EnemyCap ) return;
 
 		// Filter to difficulty eligible cards 

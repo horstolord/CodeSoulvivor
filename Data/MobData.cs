@@ -25,6 +25,9 @@ public class MobData
 	public float WillPerLevel       { get; set; } = 0.5f;
 	public float AcuityPerLevel     { get; set; } = 0.5f;
 	public float WisdomPerLevel     { get; set; } = 0.5f;
+	
+	public float Armor { get; set; } = 1f;
+	public float ArmorPerLevel { get; set; } = 1f;
 
 	public MobData Clone()
 	{
@@ -45,6 +48,8 @@ public class MobData
 			WillPerLevel      = WillPerLevel,
 			AcuityPerLevel    = AcuityPerLevel,
 			WisdomPerLevel    = WisdomPerLevel,
+			Armor = Armor,
+			ArmorPerLevel =  ArmorPerLevel,
 		};
 	}
 }
@@ -75,6 +80,8 @@ public static class MobRegistry
 			WillPerLevel       = 0.8f,
 			AcuityPerLevel     = 0.8f,
 			WisdomPerLevel     = 0.8f,
+			Armor =	10f,
+			ArmorPerLevel =  10f
 		};
 
 		Library["goblin"] = new MobData
@@ -92,6 +99,8 @@ public static class MobRegistry
 			WillPerLevel       = 0.3f,
 			AcuityPerLevel     = 0.3f,
 			WisdomPerLevel     = 0.3f,
+			Armor =	1f,
+			ArmorPerLevel =  1f
 		};
 
 		Library["orc"] = new MobData
@@ -109,6 +118,8 @@ public static class MobRegistry
 			WillPerLevel       = 0.5f,
 			AcuityPerLevel     = 0.5f,
 			WisdomPerLevel     = 0.5f,
+			Armor =	10f,
+			ArmorPerLevel =  10f
 		};
 	}
 }

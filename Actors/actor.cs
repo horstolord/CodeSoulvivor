@@ -57,6 +57,9 @@ public class Actor : Component
 		// 2. Jetzt sicher laden und Werte initialisieren
 		StatSheet.InitializeFromRegistry( presetId );
 
+		// InitializeFromRegistry replaces Stat instances — re-bind any already-equipped gear
+		Equipment?.ReapplyAll();
+
 		// 3. Level component — wire up level-up callback
 		Leveling = Components.GetOrCreate<LevelComponent>();
 		Leveling.Initialize( _mobData );
@@ -77,6 +80,7 @@ public class Actor : Component
 		StatSheet.Will.BaseValue      += _mobData.WillPerLevel;
 		StatSheet.Acuity.BaseValue    += _mobData.AcuityPerLevel;
 		StatSheet.Wisdom.BaseValue    += _mobData.WisdomPerLevel;
+		StatSheet.Armor.BaseValue     += _mobData.ArmorPerLevel;
 
 		// Recalculate HP, stamina, regen, etc. from new attribute totals
 		StatSheet.RecalculateDerivedStats();
@@ -109,14 +113,40 @@ public class Actor : Component
 	// ============ DAMAGE ============
 	public void ApplyDamage( DamageProfileDef damage )
 	{
+		if (StatSheet == null) return;
+		
+		// Check evasion
+		float evasion = StatSheet.Evasion.Value;
+		if ( evasion > 0f && Random.Shared.NextSingle() * 100f < evasion )
+		{
+			Log.Info( $"{GameObject.Name} EVADED the attack!" );
+			return;
+		}
+		
 		var damageMultiplier = StatSheet.DamageMultiplier.Value / 100f;
-		var healthDamage     = damage.HealthDamage * damageMultiplier;
-
-		StatSheet.CurrentHealth  = MathF.Max( 0f, StatSheet.CurrentHealth  - healthDamage );
+		var rawHealthDamage     = damage.HealthDamage * damageMultiplier;
+		
+		// Mitigation
+		float finalHealthDamage = rawHealthDamage;
+		
+		if ( damage.Tags != null )
+		{
+			if ( damage.Tags.Contains( AttackTag.Fire  ) ) {finalHealthDamage *= MathF.Max(0.05f, 1f - (StatSheet.ResistanceFire.Value/100f));}
+			if ( damage.Tags.Contains( AttackTag.Frost ) ) {finalHealthDamage *= MathF.Max(0.05f, 1f - (StatSheet.ResistanceFrost.Value/100f));}
+			if ( damage.Tags.Contains( AttackTag.Air ) ) {finalHealthDamage *= MathF.Max(0.05f, 1f - (StatSheet.ResistanceAir.Value/100f));}
+			if ( damage.Tags.Contains( AttackTag.Earth ) ) {finalHealthDamage *= MathF.Max(0.05f, 1f - (StatSheet.ResistanceEarth.Value/100f));}
+		}
+		float armor = StatSheet.Armor.Value;
+		if ( armor > 0f && damage.Tags != null && damage.Tags.Contains( AttackTag.Physical ))
+		{
+			float armorReduction = armor / (armor + 100f);
+			finalHealthDamage *= (1f-armorReduction);
+		}
+		StatSheet.CurrentHealth  = MathF.Max( 0f, StatSheet.CurrentHealth  - finalHealthDamage );
 		StatSheet.CurrentStamina = MathF.Max( 0f, StatSheet.CurrentStamina - damage.StaminaDamage );
 		StatSheet.CurrentStagger = MathF.Max( 0f, StatSheet.CurrentStagger - damage.StaggerDamage );
 
-		Log.Info( $"{GameObject.Name} took {healthDamage:F1} dmg — HP={StatSheet.CurrentHealth:F1}/{StatSheet.MaxHealth.Value:F1}" );
+		Log.Info( $"{GameObject.Name} took {finalHealthDamage:F1} dmg — HP={StatSheet.CurrentHealth:F1}/{StatSheet.MaxHealth.Value:F1}" );
 
 		if ( StatSheet.CurrentHealth <= 0f )
 			OnKilled();

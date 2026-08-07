@@ -73,11 +73,6 @@ public class StatSheet : Component
 	public Stat EffectDuration { get; private set; } // How long buffs/debuffs last (percent)
 	public Stat EffectPotency { get; private set; } // How strong buffs/debuffs are (percent)
 	
-	protected override void OnStart()
-	{
-		base.OnStart();
-	}
-
 	public void InitializeFromRegistry( string mobId )
 	{
 		// 1. Safely pull the master template from the dictionary
@@ -117,7 +112,7 @@ public class StatSheet : Component
 		DamageMultiplier = new Stat( 100f ); // Default 1.0x
 		CritChance = new Stat( 0f );
 		CritDamage = new Stat( 50f ); // Default 1.5x = 150%
-		Armor = new Stat( 0f );
+		Armor = new Stat( templateData.Armor );
 		ResistanceFire = new Stat( 0f );
 		ResistanceFrost = new Stat( 0f );
 		ResistanceAir = new Stat( 0f );

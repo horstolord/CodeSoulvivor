@@ -30,7 +30,7 @@ public sealed class EquipmentStatBlock
 	public float GuardValue { get; init; }
 	public float PoiseDamage { get; init; }
 	
-	public float BaseDefense {get; init; }
+	public float Armor {get; init; }
 	
 	//public List<MaterialData> Material { get; init; }
 	public float Quality { get; init; }

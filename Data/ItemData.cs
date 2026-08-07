@@ -53,7 +53,7 @@ public static class ItemData
 			Stats = new EquipmentStatBlock
 			{
 				BaseDamage = 14,
-				BaseAttackSpeed = 1.0f,
+				BaseAttackSpeed = 0.50f,
 				PoiseDamage = 6,
 				Weight = 4
 			}
@@ -77,7 +77,8 @@ public static class ItemData
 			Slot = EquipmentSlot.Head,
 			Stats = new EquipmentStatBlock
 			{
-				Weight = 1
+				Weight = 1,
+				Armor = 75f
 			}
 		},
 		Mods = new()

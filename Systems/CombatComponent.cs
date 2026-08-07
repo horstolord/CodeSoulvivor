@@ -83,7 +83,8 @@ public sealed class CombatComponent : Component
 				HealthDamage = attack.Damage.HealthDamage + attackerMight * attack.Scaling.MightToHealthDamage,
 				StaggerDamage = attack.Damage.StaggerDamage,
 				StaminaDamage = attack.Damage.StaminaDamage,
-				KnockbackForce = attack.Damage.KnockbackForce * attack.Scaling.MightToKnockbackForce
+				KnockbackForce = attack.Damage.KnockbackForce * attack.Scaling.MightToKnockbackForce,
+				Tags = [..(attack.Tags ?? new HashSet<AttackTag>())]
 			},
 			HitPhases = (attack.HitPhases ?? new List<HitPhaseDef>())
 				.Select( phase => new HitPhaseDef
@@ -292,8 +293,33 @@ public sealed class CombatComponent : Component
 	private void ApplyHit( AttackContext context, GameObject target )
 	{
 		var actor = ResolveActor( target );
+		var attackerActor = ResolveActor( context.Attacker );
+		var damage = context.Damage;
+
+		if ( attackerActor?.StatSheet != null )
+		{
+			// Check for Critical Hit
+			float critChance = attackerActor.StatSheet.CritChance.Value;
+			bool isCrit = critChance > 0f && Random.Shared.NextSingle() * 100f < critChance;
+			float critMultiplier = isCrit ? (1f + attackerActor.StatSheet.CritDamage.Value / 100f) : 1f;
+
+			// Scale Knockback Force by Attacker's Physical Force stat
+			float forceMult = attackerActor.StatSheet.PhysicalForce.Value / 100f;
+
+			damage = new DamageProfileDef
+			{
+				HealthDamage = damage.HealthDamage * critMultiplier,
+				StaggerDamage = damage.StaggerDamage * critMultiplier,
+				StaminaDamage = damage.StaminaDamage,
+				KnockbackForce = damage.KnockbackForce * forceMult,
+				Tags = damage.Tags,
+				IsCrit = isCrit
+			};
+		}
+
+		
 		var knockbackDirection = (context.Facing.Forward + Vector3.Up / 2f).Normal;
-		actor?.ApplyDamage( context.Damage );
+		actor?.ApplyDamage( damage );
 
 		var _body = target.Components.GetInAncestorsOrSelf<Rigidbody>();
 		var renderer = context.Attacker.Components.GetInAncestorsOrSelf<SkinnedModelRenderer>();

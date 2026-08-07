@@ -47,10 +47,18 @@ public class EquipmentControl : Component
 	{
 		if ( item?.Equipment == null ) return;
 
-		var statSheet = GameObject.Components.Get<StatSheet>( FindMode.EverythingInSelfAndAncestors );
+		var actor = Components.GetInAncestorsOrSelf<Actor>();
+		var statSheet = actor?.StatSheet
+		                ?? Components.GetInAncestorsOrSelf<StatSheet>();
 		if ( statSheet == null )
 		{
 			Log.Warning( $"[EquipmentControl] No StatSheet found on {GameObject.Name}" );
+			return;
+		}
+
+		if ( statSheet.Armor == null )
+		{
+			Log.Warning( $"[EquipmentControl] StatSheet on {GameObject.Name} is not initialized yet — deferring equip of '{item.Name}'" );
 			return;
 		}
 
@@ -60,10 +68,11 @@ public class EquipmentControl : Component
 		if ( _slots.ContainsKey( slot ) )
 			UnequipInternal( slot, statSheet );
 
-		// Apply all Mods from the new item
 		var entry = new EquippedEntry { Item = item };
+		var stats = item.Equipment.Stats;
 
-		foreach ( var mod in item.Mods )
+		// 1) Named Mods (Might, Will, etc.)
+		foreach ( var mod in item.Mods ?? Enumerable.Empty<ModData>() )
 		{
 			var stat = statSheet.GetStat( mod.StatName );
 			if ( stat == null )
@@ -76,14 +85,21 @@ public class EquipmentControl : Component
 			entry.AppliedModifiers.Add( (stat, modifier) );
 		}
 
-		// Apply weapon AttackSpeed to the AttackSpeed stat
-		// BaseAttackSpeed 1.0 = neutral, 1.2 = 20% faster → +20 flat to AttackSpeed stat
-		if ( item.Equipment.Stats.BaseAttackSpeed != 0f && item.Equipment.Stats.BaseAttackSpeed != 1f )
+		// 2) EquipmentStatBlock.Armor → StatSheet.Armor (same role as BaseDamage for weapons)
+		if ( stats != null && stats.Armor != 0f )
+		{
+			var modifier = new StatModifier( stats.Armor, ModifierType.Flat, source: entry );
+			statSheet.Armor.AddModifier( modifier );
+			entry.AppliedModifiers.Add( (statSheet.Armor, modifier) );
+		}
+
+		// 3) BaseAttackSpeed → AttackSpeed
+		if ( stats != null && stats.BaseAttackSpeed != 0f && stats.BaseAttackSpeed != 1f )
 		{
 			var attackSpeedStat = statSheet.GetStat( "AttackSpeed" );
 			if ( attackSpeedStat != null )
 			{
-				float delta = (item.Equipment.Stats.BaseAttackSpeed - 1f) * 100f;
+				float delta = (stats.BaseAttackSpeed - 1f) * 100f;
 				var modifier = new StatModifier( delta, ModifierType.Flat, source: entry );
 				attackSpeedStat.AddModifier( modifier );
 				entry.AppliedModifiers.Add( (attackSpeedStat, modifier) );
@@ -92,12 +108,13 @@ public class EquipmentControl : Component
 
 		_slots[slot] = entry;
 
-		// Recalculate derived stats if any attributes were modified
-		bool touchedAttribute = item.Mods.Any( m => IsAttributeStat( m.StatName ) );
+		bool touchedAttribute = (item.Mods ?? Enumerable.Empty<ModData>()).Any( m => IsAttributeStat( m.StatName ) );
 		if ( touchedAttribute )
 			statSheet.RecalculateDerivedStats();
 
-		Log.Info( $"[EquipmentControl] Equipped '{item.Name}' in slot {slot}. Applied {entry.AppliedModifiers.Count} modifier(s)." );
+		Log.Info( $"[EquipmentControl] Equipped '{item.Name}' in {slot}. " +
+		          $"Stats.Armor={stats?.Armor:F1}, mods=[{string.Join( ", ", (item.Mods ?? Enumerable.Empty<ModData>()).Select( m => $"{m.StatName}:{m.Value}" ) )}], " +
+		          $"applied={entry.AppliedModifiers.Count}, Armor now={statSheet.Armor.Value:F1} (base={statSheet.Armor.BaseValue:F1})" );
 	}
 
 	/// <summary>
@@ -108,11 +125,28 @@ public class EquipmentControl : Component
 		var normalized = NormalizeSlot( slot );
 		if ( !_slots.ContainsKey( normalized ) ) return;
 
-		var statSheet = GameObject.Components.Get<StatSheet>( FindMode.EverythingInSelfAndAncestors );
+		var actor = Components.GetInAncestorsOrSelf<Actor>();
+		var statSheet = actor?.StatSheet
+		                ?? Components.GetInAncestorsOrSelf<StatSheet>();
 		UnequipInternal( normalized, statSheet );
 
 		if ( statSheet != null )
 			statSheet.RecalculateDerivedStats();
+	}
+
+	/// <summary>
+	/// Re-applies every currently equipped item's modifiers.
+	/// Call after StatSheet.InitializeFromRegistry, which replaces Stat instances and drops old modifiers.
+	/// </summary>
+	public void ReapplyAll()
+	{
+		if ( _slots.Count == 0 ) return;
+
+		var items = _slots.Values.Select( e => e.Item ).ToList();
+		_slots.Clear();
+
+		foreach ( var item in items )
+			Equip( item );
 	}
 
 	// ============ INTERNALS ============

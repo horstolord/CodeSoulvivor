@@ -12,9 +12,9 @@ public enum RuneDeliveryType { Projectile, Beam, SelfTouch, AoE }
 
 public class RuneScalingDef
 {
-	public float WisdomToPower;
+	public float WillToPower;
 	public float AcuityToCastSpeed;
-	public float WillToDuration;
+	public float WisdomToDuration;
 }
 
 public class RuneDef : ICostable
@@ -42,6 +42,8 @@ public class RuneDef : ICostable
 	public float BasePower;
 	public float StaggerDamage;
 	public float KnockbackForce;
+	public float WillToPower;
+	public float AcuityToSpeed;
 	public RuneElementTag? ElementTag;
 
 	// Method Runes: Delivery shape & Projectile Template

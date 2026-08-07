@@ -22,8 +22,8 @@ public sealed class InventoryPanel
     public int UsedSlots => Slots.Count( s => s.Item != null );
     public int TotalSlots => Slots.Count;
     public int Revision { get; private set; }
-    public int TotalAttack => EquippedSlots.Values.Sum( item => item.Stats.Attack );
-    public int TotalDefense => EquippedSlots.Values.Sum( item => item.Stats.Defense );
+    public int TotalAttack => EquippedSlots.Values.Sum( item => (int)(item.Definition?.Equipment?.Stats?.BaseDamage ?? item.Stats.Attack) );
+    public int TotalDefense => EquippedSlots.Values.Sum( item => (int)(item.Definition?.Equipment?.Stats?.Armor ?? item.Stats.Defense) );
     public int TotalSpeed => EquippedSlots.Values.Sum( item => item.Stats.Speed );
 
     public InventoryPanel()
@@ -128,7 +128,9 @@ public sealed class InventoryPanel
         EquippedSlots[equipmentSlot] = itemToEquip;
 
         // Forward to the gameplay EquipmentControl so stat modifiers are actually applied
-        Sandbox.Code.Actors.Player.Local?.Equipment?.Equip( itemToEquip.Definition );
+        var def = itemToEquip.Definition;
+        Log.Info( $"[Inventory] Equipping '{def?.Name}' — Definition.Stats.Armor={def?.Equipment?.Stats?.Armor:F1}, Mods={def?.Mods?.Count ?? 0}" );
+        Actors.Player.Local?.Equipment?.Equip( def );
 
         SelectedSlotId = null;
         draggingSlotId = null;
@@ -202,7 +204,7 @@ public sealed class InventoryItem
             Stats = new InventoryItemStats
             {
                 Attack = (int)(stats?.BaseDamage ?? 0f),
-                Defense = (int)(stats?.BaseDefense ?? 0f),
+                Defense = (int)(stats?.Armor ?? 0f),
                 Speed = (int)(definition?.Mods?.Where( mod => mod.StatName == "Swiftness" ).Sum( mod => mod.Value ) ?? 0f)
             }
         };

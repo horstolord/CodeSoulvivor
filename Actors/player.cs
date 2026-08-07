@@ -9,6 +9,7 @@ public sealed class Player : Actor
 	public static Player Local { get; private set; }
 	[Property] public SkinnedModelRenderer BodyRenderer { get; set; }
 	private Vector3 _knockbackVelocity;
+	private PlayerController _playerController;
 
 	// Load the "player" / hero stat preset from MobRegistry
 	protected override string GetMobPresetId() => "player";
@@ -19,6 +20,7 @@ public sealed class Player : Actor
 		MobRegistry.Initialize();
 		Local = this;
 		Combat = GameObject.Components.Get<CombatComponent>();
+		_playerController = GameObject.Components.GetInAncestorsOrSelf<PlayerController>(  );
 		BodyRenderer ??= Components.GetInChildren<SkinnedModelRenderer>();
 		if ( BodyRenderer is null )
 			Log.Warning( $"No BodyRenderer found on {GameObject.Name}" );
@@ -32,12 +34,27 @@ public sealed class Player : Actor
 	protected override void OnUpdate()
 	{
 		base.OnUpdate();
+		UpdatePlayerMovementStats();
 		if ( Combat.CanAttack )
 		{
 			HandleCombatInput();
 		}
 	}
-	
+
+	private void UpdatePlayerMovementStats()
+	{
+		if ( _playerController == null )
+		{
+			_playerController = Components.GetInAncestorsOrSelf<PlayerController>() ?? Components.Get<PlayerController>();
+		}
+		if ( _playerController != null && StatSheet != null )
+		{
+			float baseSpeed = StatSheet.MoveSpeed.Value + 100f;
+			_playerController.WalkSpeed = baseSpeed;
+			_playerController.RunSpeed = baseSpeed * 2;
+			_playerController.JumpSpeed = StatSheet.JumpPower.Value * 3;
+		}
+	}
 	private void HandleCombatInput()
 	{
 		if ( Combat == null )

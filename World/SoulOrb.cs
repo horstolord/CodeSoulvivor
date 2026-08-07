@@ -92,7 +92,7 @@ public class SoulOrb : Component
 		// Find the nearest actor within HomingRadius
 		var myPos = GameObject.WorldPosition;
 		_target = Scene.GetAllComponents<Actor>()
-			.Where( a => a.IsValid() && a.GameObject != null )
+			.Where( a => a.IsValid() && a.GameObject != null && a.StateComp?.CurrentState != ActorStateType.Dead && (a.StatSheet == null || a.StatSheet.CurrentHealth > 0f) )
 			.OrderBy( a => (a.GameObject.WorldPosition - myPos).LengthSquared )
 			.FirstOrDefault( a => (a.GameObject.WorldPosition - myPos).Length <= HomingRadius );
 	}
