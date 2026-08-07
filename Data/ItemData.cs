@@ -53,7 +53,7 @@ public static class ItemData
 			Stats = new EquipmentStatBlock
 			{
 				BaseDamage = 14,
-				BaseAttackSpeed = 0.50f,
+				BaseAttackSpeed = 2.0f,
 				PoiseDamage = 6,
 				Weight = 4
 			}

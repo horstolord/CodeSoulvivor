@@ -42,8 +42,6 @@ public class RuneDef : ICostable
 	public float BasePower;
 	public float StaggerDamage;
 	public float KnockbackForce;
-	public float WillToPower;
-	public float AcuityToSpeed;
 	public RuneElementTag? ElementTag;
 
 	// Method Runes: Delivery shape & Projectile Template

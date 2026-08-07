@@ -114,8 +114,8 @@ public static class AttackData
 		Id = "shoot",
 		DisplayName = "Shoot Arrow",
 		StartupTime = 0.15f,
-		RecoveryTime = 0.25f,
-		CooldownTime = 0.5f,
+		RecoveryTime = 0.05f,
+		CooldownTime = 0.2f,
 		StaminaCost = 8f,
 		Damage = new DamageProfileDef
 		{
@@ -134,7 +134,7 @@ public static class AttackData
 		{
 			Termination = ProjectileTerminationType.FirstHit,
 			CollisionBoxSize = new Vector3( 6f, 6f, 6f ),
-			Speed = 1500f
+			Speed = 2000f
 		}
 	};
 

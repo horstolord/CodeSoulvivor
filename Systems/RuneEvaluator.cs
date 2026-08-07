@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Sandbox;
+using Sandbox.Code.Actors;
 using Sandbox.Code.World;
 
 namespace Sandbox.Code.Systems;
@@ -41,6 +42,10 @@ public static class RuneEvaluator
 			RecursionDepth = currentDepth
 		};
 
+		var statSheet = caster?.Components.GetInAncestorsOrSelf<Actor>()?.StatSheet;
+		float will = statSheet?.Will.Value ?? 0f;
+		float acuity = statSheet?.Acuity.Value ?? 0f;
+
 		int index = 0;
 		bool hasMethod = false;
 
@@ -53,11 +58,18 @@ public static class RuneEvaluator
 				continue;
 			}
 
-			// Aggregate costs & cast delay
+			// Aggregate costs & cast delay (Method delay scales with Acuity)
 			ctx.TotalEnergyCost += rune.EnergyCost;
 			ctx.TotalHealthCost += rune.HealthCost;
 			ctx.TotalStaminaCost += rune.StaminaCost;
-			ctx.TotalCastDelay += rune.CastDelay;
+
+			float castDelay = rune.CastDelay;
+			if ( rune.Category == RuneCategory.Method )
+			{
+				float acuityScale = rune.Scaling?.AcuityToCastSpeed ?? 0f;
+				castDelay /= 1f + acuity * acuityScale / 100f;
+			}
+			ctx.TotalCastDelay += castDelay;
 
 			switch ( rune.Category )
 			{
@@ -77,7 +89,8 @@ public static class RuneEvaluator
 					break;
 
 				case RuneCategory.Force:
-					ctx.AccumulatedDamage.HealthDamage += rune.BasePower;
+					ctx.AccumulatedDamage.HealthDamage += rune.BasePower
+						+ will * (rune.Scaling?.WillToPower ?? 0f);
 					ctx.AccumulatedDamage.StaggerDamage += rune.StaggerDamage;
 					ctx.AccumulatedDamage.KnockbackForce += rune.KnockbackForce;
 					if ( rune.ElementTag.HasValue ) ctx.ElementTags.Add( rune.ElementTag.Value );

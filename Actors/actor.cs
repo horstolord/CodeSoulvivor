@@ -81,6 +81,7 @@ public class Actor : Component
 		StatSheet.Acuity.BaseValue    += _mobData.AcuityPerLevel;
 		StatSheet.Wisdom.BaseValue    += _mobData.WisdomPerLevel;
 		StatSheet.Armor.BaseValue     += _mobData.ArmorPerLevel;
+		StatSheet.CritChance.BaseValue += _mobData.CritChancePerLevel;
 
 		// Recalculate HP, stamina, regen, etc. from new attribute totals
 		StatSheet.RecalculateDerivedStats();

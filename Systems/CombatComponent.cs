@@ -180,11 +180,18 @@ public sealed class CombatComponent : Component
 		if ( attacker != null )
 			template.Lifetime *= attacker.StatSheet.EffectDuration.Value / 100f;
 
+		var damage = context.Damage;
+		if ( attacker?.StatSheet != null )
+		{
+			damage = CombatMath.RollCrit( attacker.StatSheet, damage );
+			damage.KnockbackForce *= attacker.StatSheet.PhysicalForce.Value / 100f;
+		}
+
 		projectile.Template = template;
 		projectile.Payload = new ProjectilePayload
 		{
 			Caster = context.Attacker,
-			Damage = context.Damage,
+			Damage = damage,
 			SourceContext = context
 		};
 
@@ -298,23 +305,8 @@ public sealed class CombatComponent : Component
 
 		if ( attackerActor?.StatSheet != null )
 		{
-			// Check for Critical Hit
-			float critChance = attackerActor.StatSheet.CritChance.Value;
-			bool isCrit = critChance > 0f && Random.Shared.NextSingle() * 100f < critChance;
-			float critMultiplier = isCrit ? (1f + attackerActor.StatSheet.CritDamage.Value / 100f) : 1f;
-
-			// Scale Knockback Force by Attacker's Physical Force stat
-			float forceMult = attackerActor.StatSheet.PhysicalForce.Value / 100f;
-
-			damage = new DamageProfileDef
-			{
-				HealthDamage = damage.HealthDamage * critMultiplier,
-				StaggerDamage = damage.StaggerDamage * critMultiplier,
-				StaminaDamage = damage.StaminaDamage,
-				KnockbackForce = damage.KnockbackForce * forceMult,
-				Tags = damage.Tags,
-				IsCrit = isCrit
-			};
+			damage = CombatMath.RollCrit( attackerActor.StatSheet, damage );
+			damage.KnockbackForce *= attackerActor.StatSheet.PhysicalForce.Value / 100f;
 		}
 
 		

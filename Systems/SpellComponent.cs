@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Sandbox;
 using Sandbox.Code.Actors;
@@ -61,8 +62,10 @@ public sealed class SpellComponent : Component
 		// Apply Cooldown / Timers
 		float castDelay = evalResult.ConsolidatedContext.TotalCastDelay + (Catalyst?.BaseCastDelay ?? 0.1f);
 		float rechargeTime = Catalyst?.BaseRechargeTime ?? 1.0f;
-
-		_castDelayTimer = castDelay;
+		var stats = actor?.Components.Get<StatSheet>();
+		float castSpeedMultiplier = MathF.Max( 0.01f, (stats?.CastSpeed?.Value ?? 100f) / 100f );
+		// Higher cast speed = shorter post-cast delay
+		_castDelayTimer = castDelay /castSpeedMultiplier;
 		_rechargeTimer = rechargeTime;
 
 		return true;

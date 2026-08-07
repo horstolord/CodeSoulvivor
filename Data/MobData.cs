@@ -29,6 +29,10 @@ public class MobData
 	public float Armor { get; set; } = 1f;
 	public float ArmorPerLevel { get; set; } = 1f;
 
+	/// <summary>Base critical hit chance in percent (e.g. 5 = 5%).</summary>
+	public float CritChance { get; set; } = 5f;
+	public float CritChancePerLevel { get; set; } = 0.25f;
+
 	public MobData Clone()
 	{
 		return new MobData
@@ -50,6 +54,8 @@ public class MobData
 			WisdomPerLevel    = WisdomPerLevel,
 			Armor = Armor,
 			ArmorPerLevel =  ArmorPerLevel,
+			CritChance = CritChance,
+			CritChancePerLevel = CritChancePerLevel,
 		};
 	}
 }
@@ -81,7 +87,9 @@ public static class MobRegistry
 			AcuityPerLevel     = 0.8f,
 			WisdomPerLevel     = 0.8f,
 			Armor =	10f,
-			ArmorPerLevel =  10f
+			ArmorPerLevel =  10f,
+			CritChance = 5f,
+			CritChancePerLevel = 0.5f
 		};
 
 		Library["goblin"] = new MobData
@@ -100,7 +108,9 @@ public static class MobRegistry
 			AcuityPerLevel     = 0.3f,
 			WisdomPerLevel     = 0.3f,
 			Armor =	1f,
-			ArmorPerLevel =  1f
+			ArmorPerLevel =  1f,
+			CritChance = 5f,
+			CritChancePerLevel = 0.25f
 		};
 
 		Library["orc"] = new MobData
@@ -119,7 +129,9 @@ public static class MobRegistry
 			AcuityPerLevel     = 0.5f,
 			WisdomPerLevel     = 0.5f,
 			Armor =	10f,
-			ArmorPerLevel =  10f
+			ArmorPerLevel =  10f,
+			CritChance = 5f,
+			CritChancePerLevel = 0.25f
 		};
 	}
 }

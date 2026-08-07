@@ -13,7 +13,9 @@ public static class RuneLibrary
 		Category = RuneCategory.Force,
 		BasePower = 25f,
 		EnergyCost = 5f,
-		ElementTag = RuneElementTag.Fire
+		ElementTag = RuneElementTag.Fire,
+		SpellTags = new() { AttackTag.Fire },
+		Scaling = new RuneScalingDef { WillToPower = 1f }
 	};
 
 	public static readonly RuneDef FrostForce = new RuneDef
@@ -23,7 +25,9 @@ public static class RuneLibrary
 		Category = RuneCategory.Force,
 		BasePower = 18f,
 		EnergyCost = 4f,
-		ElementTag = RuneElementTag.Frost
+		ElementTag = RuneElementTag.Frost,
+		SpellTags = new() { AttackTag.Frost },
+		Scaling = new RuneScalingDef { WillToPower = 1f }
 	};
 
 	public static readonly RuneDef ProjectileMethod = new RuneDef
@@ -34,7 +38,8 @@ public static class RuneLibrary
 		DeliveryType = RuneDeliveryType.Projectile,
 		CastDelay = 0.15f,
 		EnergyCost = 2f,
-		ProjectileTemplate = new ProjectileTemplate { Speed = 1200f, Lifetime = 4f }
+		ProjectileTemplate = new ProjectileTemplate { Speed = 1200f, Lifetime = 4f },
+		Scaling = new RuneScalingDef { AcuityToCastSpeed = 2f }
 	};
 
 	public static readonly RuneDef BeamMethod = new RuneDef
@@ -45,7 +50,8 @@ public static class RuneLibrary
 		DeliveryType = RuneDeliveryType.Beam,
 		Range = 1500f,
 		CastDelay = 0.10f,
-		EnergyCost = 3f
+		EnergyCost = 3f,
+		Scaling = new RuneScalingDef { AcuityToCastSpeed = 2f }
 	};
 
 	public static readonly RuneDef EmpowerModifier = new RuneDef

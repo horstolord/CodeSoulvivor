@@ -64,8 +64,11 @@ public class ProjectileDeliveryMethod : ISpellDeliveryMethod
 				HealthDamage = ctx.AccumulatedDamage.HealthDamage * ctx.DamageMultiplier,
 				StaggerDamage = ctx.AccumulatedDamage.StaggerDamage,
 				StaminaDamage = ctx.AccumulatedDamage.StaminaDamage,
-				KnockbackForce = ctx.AccumulatedDamage.KnockbackForce
+				KnockbackForce = ctx.AccumulatedDamage.KnockbackForce,
+				Tags = ctx.AttackTags
 			};
+			var casterSheet = ctx.Caster.Components.GetInAncestorsOrSelf<Actor>()?.StatSheet;
+			damageDef = CombatMath.RollCrit( casterSheet, damageDef );
 
 			projComp.Template = template;
 			projComp.Payload = new ProjectilePayload
@@ -103,8 +106,11 @@ public class BeamDeliveryMethod : ISpellDeliveryMethod
 			HealthDamage = ctx.AccumulatedDamage.HealthDamage * ctx.DamageMultiplier,
 			StaggerDamage = ctx.AccumulatedDamage.StaggerDamage,
 			StaminaDamage = ctx.AccumulatedDamage.StaminaDamage,
-			KnockbackForce = ctx.AccumulatedDamage.KnockbackForce
+			KnockbackForce = ctx.AccumulatedDamage.KnockbackForce,
+			Tags = ctx.AttackTags
 		};
+		var casterSheet = ctx.Caster.Components.GetInAncestorsOrSelf<Actor>()?.StatSheet;
+		damageDef = CombatMath.RollCrit( casterSheet, damageDef );
 		// In s&box, Assets/ is the filesystem root — paths must NOT include "assets/" prefix.
 		// ResourceLibrary.Get throws if not found; TryGet returns false silently.
 		if ( ResourceLibrary.TryGet<PrefabFile>( "beamblue.prefab", out var prefabFile ) )
@@ -151,8 +157,11 @@ public class SelfTouchDeliveryMethod : ISpellDeliveryMethod
 			HealthDamage = ctx.AccumulatedDamage.HealthDamage * ctx.DamageMultiplier,
 			StaggerDamage = ctx.AccumulatedDamage.StaggerDamage,
 			StaminaDamage = ctx.AccumulatedDamage.StaminaDamage,
-			KnockbackForce = ctx.AccumulatedDamage.KnockbackForce
+			KnockbackForce = ctx.AccumulatedDamage.KnockbackForce,
+			Tags = ctx.AttackTags
 		};
+		var casterSheet = ctx.Caster.Components.GetInAncestorsOrSelf<Actor>()?.StatSheet;
+		damageDef = CombatMath.RollCrit( casterSheet, damageDef );
 
 		foreach ( var hit in hits )
 		{

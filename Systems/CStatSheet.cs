@@ -69,6 +69,7 @@ public class StatSheet : Component
 	public Stat Evasion { get; private set; } // Percent chance to avoid attack
 
 	// ============ UTILITY STATS ============
+	public Stat CastSpeed {get; private set;} // delay before next spell!
 	public Stat CostMultiplier { get; private set; } // Health/stamina/energy cost 100 = 1.0x
 	public Stat EffectDuration { get; private set; } // How long buffs/debuffs last (percent)
 	public Stat EffectPotency { get; private set; } // How strong buffs/debuffs are (percent)
@@ -95,6 +96,7 @@ public class StatSheet : Component
 		WillPerLevel = new Stat( templateData.WillPerLevel );
 		AcuityPerLevel = new Stat( templateData.AcuityPerLevel );
 		WisdomPerLevel = new Stat( templateData.WisdomPerLevel );
+		CastSpeed = new Stat( 100f );
 
 		Log.Info( $"{GameObject.Name} stats initialized successfully as a unique instance of '{templateData.Name}'." );
 		
@@ -110,7 +112,7 @@ public class StatSheet : Component
 
 		// Initialize combat stats
 		DamageMultiplier = new Stat( 100f ); // Default 1.0x
-		CritChance = new Stat( 0f );
+		CritChance = new Stat( templateData.CritChance );
 		CritDamage = new Stat( 50f ); // Default 1.5x = 150%
 		Armor = new Stat( templateData.Armor );
 		ResistanceFire = new Stat( 0f );
@@ -228,6 +230,7 @@ public class StatSheet : Component
 			"Evasion" => Evasion,
 
 			// Utility
+			"CastSpeed" => CastSpeed,
 			"CostMultiplier" => CostMultiplier,
 			"EffectDuration" => EffectDuration,
 			"EffectPotency" => EffectPotency,
@@ -267,6 +270,7 @@ public class StatSheet : Component
 		yield return ( "Range", Range );
 		yield return ( "Poise", Poise );
 		yield return ( "Evasion", Evasion );
+		yield return ( "CastSpeed", CastSpeed );
 		yield return ( "CostMultiplier", CostMultiplier );
 		yield return ( "EffectDuration", EffectDuration );
 		yield return ( "EffectPotency", EffectPotency );
