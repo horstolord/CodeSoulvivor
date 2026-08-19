@@ -10,6 +10,7 @@ public struct SpellPayload
 	public SpellContext Context;
 	public RuneDeliveryType DeliveryType;
 	public ProjectileTemplate ProjectileTemplate;
+	public string ProjectilePrefabPath;
 	public float BeamRange;
 	public float AoERadius;
 }
@@ -40,45 +41,63 @@ public class ProjectileDeliveryMethod : ISpellDeliveryMethod
 
 		var spawnTransform = new Transform( ctx.Origin, rot );
 
-		// Update this path to match your project's directory structure (excluding "Assets/")
-		if ( ResourceLibrary.TryGet<PrefabFile>( "fireballin'.prefab", out var prefabFile ) )
+		var prefabPath = payload.ProjectilePrefabPath;
+		if ( string.IsNullOrWhiteSpace( prefabPath ) )
 		{
-			// Clone directly into the scene root (Parent = null) so it moves independently of the Caster
-			var config = new CloneConfig
-			{
-				Transform = spawnTransform,
-				Parent = null,
-				StartEnabled = true
-			};
-
-			var projGo = SceneUtility.GetPrefabScene( prefabFile ).Clone( config );
-			projGo.Name = "SpellProjectile";
-
-			Log.Info( $"[Fireballin] Spawning projectile at {ctx.Origin}" );
-
-			// Attach your motion and projectile components directly to the cloned prefab
-			projGo.Components.Create<BallMotion>();
-			var projComp = projGo.Components.Create<Projectile>();
-			var damageDef = new DamageProfileDef
-			{
-				HealthDamage = ctx.AccumulatedDamage.HealthDamage * ctx.DamageMultiplier,
-				StaggerDamage = ctx.AccumulatedDamage.StaggerDamage,
-				StaminaDamage = ctx.AccumulatedDamage.StaminaDamage,
-				KnockbackForce = ctx.AccumulatedDamage.KnockbackForce,
-				Tags = ctx.AttackTags
-			};
-			var casterSheet = ctx.Caster.Components.GetInAncestorsOrSelf<Actor>()?.StatSheet;
-			damageDef = CombatMath.RollCrit( casterSheet, damageDef );
-
-			projComp.Template = template;
-			projComp.Payload = new ProjectilePayload
-			{
-				Caster = ctx.Caster, Damage = damageDef, AttackTags = ctx.AttackTags, SourceContext = ctx
-			};
+			Log.Warning( "[ProjectileDelivery] Method rune has no ProjectilePrefabPath set." );
+			return;
 		}
-		else
+
+		if ( !ResourceLibrary.TryGet<PrefabFile>( prefabPath, out var prefabFile ) )
 		{
-			Log.Warning( "[ProjectileDelivery] Could not find fireballin'.prefab in ResourceLibrary! Make sure the folder path is correct." );
+			Log.Warning( $"[ProjectileDelivery] Could not find '{prefabPath}' in ResourceLibrary!" );
+			return;
+		}
+
+		// Clone directly into the scene root (Parent = null) so it moves independently of the Caster
+		var config = new CloneConfig
+		{
+			Transform = spawnTransform,
+			Parent = null,
+			StartEnabled = true
+		};
+
+		var projGo = SceneUtility.GetPrefabScene( prefabFile ).Clone( config );
+		projGo.Name = "SpellProjectile";
+
+		// Self-contained prefab (per our convention): motion + Projectile already authored on it —
+		// we just fetch and populate, we don't attach components here.
+		var projComp = projGo.Components.Get<Projectile>( FindMode.EnabledInSelfAndDescendants );
+		if ( projComp == null )
+		{
+			Log.Warning( $"[ProjectileDelivery] '{prefabPath}' has no Projectile component — check the prefab." );
+			projGo.Destroy();
+			return;
+		}
+
+		var damageDef = new DamageProfileDef
+		{
+			HealthDamage = ctx.AccumulatedDamage.HealthDamage * ctx.DamageMultiplier,
+			StaggerDamage = ctx.AccumulatedDamage.StaggerDamage,
+			StaminaDamage = ctx.AccumulatedDamage.StaminaDamage,
+			KnockbackForce = ctx.AccumulatedDamage.KnockbackForce,
+			Tags = ctx.AttackTags
+		};
+		var casterSheet = ctx.Caster.Components.GetInAncestorsOrSelf<Actor>()?.StatSheet;
+		damageDef = CombatMath.RollCrit( casterSheet, damageDef );
+
+		projComp.Template = template;
+		projComp.Payload = new ProjectilePayload
+		{
+			Caster = ctx.Caster, Damage = damageDef, AttackTags = ctx.AttackTags, SourceContext = ctx
+		};
+
+		// Element identity — the Force rune's material, applied to whatever the Method rune spawned.
+		if ( ctx.VisualMaterial != null )
+		{
+			var renderer = projGo.Components.GetInChildren<ModelRenderer>();
+			if ( renderer != null )
+				renderer.MaterialOverride = ctx.VisualMaterial;
 		}
 	}
 }
@@ -131,6 +150,7 @@ public class BeamDeliveryMethod : ISpellDeliveryMethod
 		{
 			var actor = tr.GameObject.Components.GetInAncestorsOrSelf<Actor>();
 			actor?.ApplyDamage( damageDef );
+			CombatMath.ApplyKnockback( tr.GameObject, ctx.AimDirection, damageDef.KnockbackForce );
 		}
 
 		if ( ctx.TriggerPayloadRunes != null && ctx.TriggerPayloadRunes.Count > 0 )
@@ -169,6 +189,9 @@ public class SelfTouchDeliveryMethod : ISpellDeliveryMethod
 			{
 				var actor = hit.GameObject.Components.GetInAncestorsOrSelf<Actor>();
 				actor?.ApplyDamage( damageDef );
+
+				var radialDirection = hit.GameObject.WorldPosition - ctx.Origin;
+				CombatMath.ApplyKnockback( hit.GameObject, radialDirection, damageDef.KnockbackForce );
 			}
 		}
 

@@ -89,9 +89,89 @@ public sealed class InventoryPanel
 
         var normalizedTarget = NormalizeSlot( targetSlot );
         var itemSlot = NormalizeSlot( slot.Item.Definition.Equipment.Slot );
-        if ( normalizedTarget != itemSlot ) return;
+
+        // Allow flasks to equip to either Flask1 or Flask2
+        bool isFlaskSlotMatch = (normalizedTarget is EquipmentSlot.Flask1 or EquipmentSlot.Flask2)
+                                && (slot.Item.Definition.Equipment.Slot is EquipmentSlot.Flask1 or EquipmentSlot.Flask2 || slot.Item.Definition.Tags.Contains("flask"));
+
+        if ( !isFlaskSlotMatch && normalizedTarget != itemSlot ) return;
 
         EquipItemInSlot( slot, normalizedTarget );
+    }
+
+    public void UseConsumable( InventorySlot slot )
+    {
+        if ( slot?.Item == null || !slot.Item.Definition.IsConsumable ) return;
+
+        var player = Actors.Player.Local;
+        if ( player == null ) return;
+
+        bool used = player.UsePotion( slot.Item );
+        if ( used )
+        {
+            slot.Item.Quantity--;
+            if ( slot.Item.Quantity <= 0 )
+            {
+                slot.Item = null;
+            }
+            Revision++;
+        }
+    }
+
+    public bool UseFlask( EquipmentSlot slot )
+    {
+        var normalized = NormalizeSlot( slot );
+        if ( !EquippedSlots.TryGetValue( normalized, out var flaskItem ) || flaskItem == null ) return false;
+
+        if ( flaskItem.RemainingCharges <= 0 )
+        {
+            Log.Info( $"[Flask] {flaskItem.Name} has no remaining charges!" );
+            return false;
+        }
+
+        var player = Actors.Player.Local;
+        if ( player == null ) return false;
+
+        flaskItem.RemainingCharges--;
+        player.ApplyFlaskEffect( flaskItem.Definition );
+        Revision++;
+        Log.Info( $"[Flask] Used {flaskItem.Name}. Charges left: {flaskItem.RemainingCharges}/{flaskItem.MaxCharges}" );
+        return true;
+    }
+
+    public void RefillFlasks( int amount = 1 )
+    {
+        int refilledCount = 0;
+        foreach ( var slot in new[] { EquipmentSlot.Flask1, EquipmentSlot.Flask2 } )
+        {
+            if ( EquippedSlots.TryGetValue( slot, out var flask ) && flask != null && flask.MaxCharges > 0 )
+            {
+                if ( flask.RemainingCharges < flask.MaxCharges )
+                {
+                    flask.RemainingCharges = System.Math.Min( flask.MaxCharges, flask.RemainingCharges + amount );
+                    refilledCount++;
+                }
+            }
+        }
+
+        // Also refill any flasks sitting in inventory grid
+        foreach ( var slot in Slots )
+        {
+            if ( slot.Item != null && slot.Item.MaxCharges > 0 && (slot.Item.Definition.Tags.Contains("flask") || slot.Item.Definition.Equipment?.Slot is EquipmentSlot.Flask1 or EquipmentSlot.Flask2) )
+            {
+                if ( slot.Item.RemainingCharges < slot.Item.MaxCharges )
+                {
+                    slot.Item.RemainingCharges = System.Math.Min( slot.Item.MaxCharges, slot.Item.RemainingCharges + amount );
+                    refilledCount++;
+                }
+            }
+        }
+
+        if ( refilledCount > 0 )
+        {
+            Revision++;
+            Log.Info( $"[Flask] Refilled {refilledCount} flask(s) (+{amount} charge)." );
+        }
     }
 
     public void Unequip( EquipmentSlot equipmentSlot )
@@ -152,8 +232,12 @@ public sealed class InventoryPanel
     {
         SetSlot( 0, ItemData.rustySword );
         SetSlot( 1, ItemData.tatteredHood );
-        SetSlot( 2, ItemData.healingFlask, 3 );
-        SetSlot( 3, ItemData.ironOre, 12 );
+        SetSlot( 2, ItemData.healingFlask, 1 );
+        SetSlot( 3, ItemData.manaFlask, 1 );
+        SetSlot( 4, ItemData.strengthPotion, 3 );
+        SetSlot( 5, ItemData.hastePotion, 3 );
+        SetSlot( 6, ItemData.ironSkinPotion, 3 );
+        SetSlot( 7, ItemData.ironOre, 12 );
     }
 
     private void SetSlot( int index, ItemDef definition, int quantity = 1 )
@@ -188,18 +272,23 @@ public sealed class InventoryItem
     public string Description => Definition?.Description ?? "";
     public ItemRarity Rarity => Definition?.Rarity ?? ItemRarity.Common;
     public string RarityClass => Rarity.ToString().ToLower();
-    public int Quantity { get; init; } = 1;
+    public int Quantity { get; set; } = 1;
+    public int RemainingCharges { get; set; }
+    public int MaxCharges { get; set; }
     public InventoryItemStats Stats { get; init; } = new();
     public string IconGlyph { get; init; } = "?";
 
     public static InventoryItem FromDefinition( ItemDef definition, int quantity = 1 )
     {
         var stats = definition?.Equipment?.Stats;
+        int charges = definition?.Consumable?.Charges ?? 0;
 
         return new InventoryItem
         {
             Definition = definition,
             Quantity = quantity,
+            RemainingCharges = charges,
+            MaxCharges = charges,
             IconGlyph = GetIconGlyph( definition ),
             Stats = new InventoryItemStats
             {
@@ -216,7 +305,10 @@ public sealed class InventoryItem
 
         if ( definition.Tags.Contains( "sword" ) ) return "SW";
         if ( definition.Tags.Contains( "armor" ) || definition.Equipment?.Slot == EquipmentSlot.Head ) return "HD";
+        if ( definition.Tags.Contains( "flask" ) || definition.Equipment?.Slot is EquipmentSlot.Flask1 or EquipmentSlot.Flask2 ) return "FL";
+        if ( definition.Tags.Contains( "potion" ) ) return "PT";
         if ( definition.Tags.Contains( "healing" ) ) return "HP";
+        if ( definition.Tags.Contains( "mana" ) ) return "MP";
         if ( definition.Tags.Contains( "ore" ) ) return "OR";
 
         return definition.Category switch

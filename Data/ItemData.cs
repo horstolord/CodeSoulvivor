@@ -33,7 +33,9 @@ public enum EquipmentSlot
 	OffHand3,
 	Ring1,
 	Ring2,
-	Amulet
+	Amulet,
+	Flask1,
+	Flask2
 }
 
 public static class ItemData
@@ -89,18 +91,93 @@ public static class ItemData
 	};
 	public static ItemDef healingFlask = new ItemDef
 	{
-		Id = "minor_healing_flask",
-		Name = "Minor Healing Flask",
-		Description = "Restores a small amount of health.",
+		Id = "healing_flask",
+		Name = "Vitality Flask",
+		Description = "Restores 40 Health on use. Charges refill when enemies are slain.",
+		Category = ItemCategory.Equipment,
+		Rarity = ItemRarity.Magic,
+		Stackable = false,
+		Tags = new() { "flask", "healing", "consumable", "starter-gear" },
+		Equipment = new EquipmentData
+		{
+			Slot = EquipmentSlot.Flask1
+		},
+		Consumable = new ConsumableData
+		{
+			Charges = 3,
+			RestoreHealth = 40f,
+			UseEffectId = "heal_health"
+		}
+	};
+	public static ItemDef manaFlask = new ItemDef
+	{
+		Id = "mana_flask",
+		Name = "Aether Flask",
+		Description = "Restores 30 Mana on use. Charges refill when enemies are slain.",
+		Category = ItemCategory.Equipment,
+		Rarity = ItemRarity.Magic,
+		Stackable = false,
+		Tags = new() { "flask", "mana", "consumable", "starter-gear" },
+		Equipment = new EquipmentData
+		{
+			Slot = EquipmentSlot.Flask2
+		},
+		Consumable = new ConsumableData
+		{
+			Charges = 3,
+			RestoreEnergy = 30f,
+			UseEffectId = "restore_mana"
+		}
+	};
+	public static ItemDef strengthPotion = new ItemDef
+	{
+		Id = "strength_potion",
+		Name = "Elixir of Might",
+		Description = "A dense crimson potion. Grants +5 Might for 10 seconds when consumed.",
 		Category = ItemCategory.Consumable,
-		Rarity = ItemRarity.Common,
+		Rarity = ItemRarity.Rare,
 		Stackable = true,
-		MaxStack = 5,
-		Tags = new() { "consumable", "healing", "flask", "tier1" },
+		MaxStack = 10,
+		Tags = new() { "potion", "buff", "consumable" },
 		Consumable = new ConsumableData
 		{
 			Charges = 1,
-			UseEffectId = "heal_small"
+			BuffEffect = BuffExamples.StrengthBoost,
+			UseEffectId = "buff_might"
+		}
+	};
+	public static ItemDef hastePotion = new ItemDef
+	{
+		Id = "haste_potion",
+		Name = "Potion of Haste",
+		Description = "A sparkling golden elixir. Boosts speed by 20% for 8 seconds when consumed.",
+		Category = ItemCategory.Consumable,
+		Rarity = ItemRarity.Magic,
+		Stackable = true,
+		MaxStack = 10,
+		Tags = new() { "potion", "buff", "consumable" },
+		Consumable = new ConsumableData
+		{
+			Charges = 1,
+			BuffEffect = BuffExamples.Haste,
+			UseEffectId = "buff_haste"
+		}
+	};
+	public static ItemDef ironSkinPotion = new ItemDef
+	{
+		Id = "ironskin_potion",
+		Name = "Ironskin Potion",
+		Description = "A dense metallic potion. Grants +10 Armor for 15 seconds when consumed.",
+		Category = ItemCategory.Consumable,
+		Rarity = ItemRarity.Magic,
+		Stackable = true,
+		MaxStack = 10,
+		Tags = new() { "potion", "buff", "consumable" },
+		Consumable = new ConsumableData
+		{
+			Charges = 1,
+			BuffEffect = BuffExamples.ToughSkin,
+			UseEffectId = "buff_ironskin"
 		}
 	};
 	public static ItemDef ironOre = new ItemDef

@@ -43,11 +43,14 @@ public class RuneDef : ICostable
 	public float StaggerDamage;
 	public float KnockbackForce;
 	public RuneElementTag? ElementTag;
+	public Material VisualMaterial; // Element identity — applied to whatever the Method rune spawns
 
 	// Method Runes: Delivery shape & Projectile Template
 	public RuneDeliveryType DeliveryType = RuneDeliveryType.Projectile;
 	public ProjectileTemplate ProjectileTemplate;
+	public string ProjectilePrefabPath; // Self-contained prefab: mesh/particles + motion + Projectile
 
+	public string BeamPrefabPath;
 	// Modifier Runes: Mutator action for active SpellContext
 	public Action<SpellContext> ModifierEffect;
 

@@ -19,6 +19,7 @@ public class Actor : Component
 	public LevelComponent Leveling  { get; private set; }
 	public CombatComponent Combat;
 	public EquipmentControl Equipment { get; private set; }
+	public BuffComponent Buffs { get; private set; }
 	// Cache the preset data so OnKilled can reference it without a dict lookup
 	private MobData _mobData;
 	public ActorStateComp StateComp { get; private set; }
@@ -31,6 +32,7 @@ public class Actor : Component
 		StatSheet = Components.GetOrCreate<StatSheet>();
 		Equipment = Components.GetOrCreate<EquipmentControl>();
 		StateComp = Components.GetOrCreate<ActorStateComp>();
+		Buffs     = Components.GetOrCreate<BuffComponent>();
 		// Starten der asynchronen Initialisierung im Hintergrund
 		_ = InitializeActorAsync();
 	}
@@ -162,6 +164,7 @@ public class Actor : Component
 		if ( aicomponent != null )
 		{
 			aicomponent.Enabled = false;
+			Player.Local?.OnEnemyKilled( this );
 		}
 		await Task.DelaySeconds(2.0f);
 		if (!this.IsValid()) return;

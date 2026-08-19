@@ -2,15 +2,13 @@ using System;
 
 namespace Sandbox.Code.Systems;
 
-/// <summary>
 /// Shared combat calculations used by melee and spells so rules stay in sync.
-/// </summary>
 public static class CombatMath
 {
-	/// <summary>
+	
 	/// Rolls crit from the attacker's sheet and returns a new damage profile
-	/// with Health/Stagger scaled and <see cref="DamageProfileDef.IsCrit"/> set.
-	/// </summary>
+	/// with Health/Stagger scaled 
+	
 	public static DamageProfileDef RollCrit( StatSheet attackerSheet, DamageProfileDef baseDamage )
 	{
 		if ( baseDamage == null )
@@ -32,5 +30,24 @@ public static class CombatMath
 			Tags = baseDamage.Tags,
 			IsCrit = isCrit
 		};
+	}
+	/// For some reason didnt work for spells, solved in projcomp.
+	public static void ApplyKnockback( GameObject target, Vector3 direction, float force )
+	{
+		if ( target == null || force <= 0f )
+			return;
+ 
+		var normalizedDirection = direction.LengthSquared > 0.0001f ? direction.Normal : Vector3.Up;
+		var biasedDirection = (normalizedDirection + Vector3.Up / 2f).Normal;
+ 
+		var controller = target.Components.GetInAncestorsOrSelf<CharacterController>();
+		if ( controller != null )
+		{
+			controller.Punch( biasedDirection * force );
+			return;
+		}
+ 
+		var rigidbody = target.Components.GetInAncestorsOrSelf<Rigidbody>();
+		rigidbody?.ApplyImpulse( biasedDirection * force );
 	}
 }

@@ -27,7 +27,7 @@ public class ProjectilePayload
     public GameObject Caster;
     public DamageProfileDef Damage;
     public HashSet<AttackTag> AttackTags = new();
-    public object SourceContext; // AttackContext or SpellContext, for override lookups later
+    public object SourceContext; // AttackContext or SpellContext, for override lookups later?
 }
 
 public sealed class Projectile : Component
@@ -102,33 +102,33 @@ public sealed class Projectile : Component
 
     private void OnHit( GameObject target )
     {
-        var actor = target.Components.GetInAncestorsOrSelf<Actor>();
-        var rb = target.Components.GetInAncestorsOrSelf<Rigidbody>();
-        var cc = target.Components.GetInAncestorsOrSelf<CharacterController>();
+	    var actor = target.Components.GetInAncestorsOrSelf<Actor>();
+	    var rb = target.Components.GetInAncestorsOrSelf<Rigidbody>();
+	    var cc = target.Components.GetInAncestorsOrSelf<CharacterController>();
+ 
+	    var knockbackDirection = (GameObject.WorldRotation.Forward + Vector3.Up / 2f).Normal;
+	    actor?.ApplyDamage( Payload.Damage );
 
-        var knockbackDirection = (GameObject.WorldRotation.Forward + Vector3.Up / 2f).Normal;
-        actor?.ApplyDamage( Payload.Damage );
-
-        if ( cc != null )
-        {
-            cc.Punch( knockbackDirection * Payload.Damage.KnockbackForce );
-        }
-        else if ( rb != null )
-        {
-            rb.ApplyImpulse( knockbackDirection * Payload.Damage.KnockbackForce );
-        }
-
-        _hitCount++;
-
-        // Trigger Rune Sub-Spell Execution
-        if ( Payload?.SourceContext is SpellContext spellCtx && spellCtx.TriggerPayloadRunes != null && spellCtx.TriggerPayloadRunes.Count > 0 )
-        {
-            var hitPos = GameObject.WorldPosition;
-            var hitNormal = -GameObject.WorldRotation.Forward;
-            RuneEvaluator.ExecuteTriggerPayload( spellCtx, hitPos, hitNormal, target );
-        }
-
-        // TODO: MaterialData / InteractionOverrides lookup goes here later
+	    if ( cc != null )
+	    {
+		    cc.Punch( knockbackDirection * Payload.Damage.KnockbackForce );
+	    }
+	    else if ( rb != null )
+	    {
+		    rb.ApplyImpulse( knockbackDirection * Payload.Damage.KnockbackForce );
+	    }
+ 
+	    _hitCount++;
+ 
+	    // Trigger Rune Sub-Spell Execution
+	    if ( Payload?.SourceContext is SpellContext spellCtx && spellCtx.TriggerPayloadRunes != null && spellCtx.TriggerPayloadRunes.Count > 0 )
+	    {
+		    var hitPos = GameObject.WorldPosition;
+		    var hitNormal = -GameObject.WorldRotation.Forward;
+		    RuneEvaluator.ExecuteTriggerPayload( spellCtx, hitPos, hitNormal, target );
+	    }
+ 
+	    // TODO: MaterialData / InteractionOverrides lookup goes here later
     }
 
     private bool ShouldTerminateAfterHit()

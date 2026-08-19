@@ -41,6 +41,10 @@ public sealed class ConsumableData
 {
 	public int Charges { get; init; } = 1;
 	public string UseEffectId { get; init; }
+	public float RestoreHealth { get; init; }
+	public float RestoreEnergy { get; init; }
+	public float RestoreStamina { get; init; }
+	public Systems.BuffDef BuffEffect { get; init; }
 }
 public sealed class CraftingData
 {
@@ -53,4 +57,5 @@ public sealed class ItemInstance
 	public ItemDef Definition { get; init; }
 	public int StackCount { get; set; } = 1;
 	public int RemainingCharges { get; set; }
+	public int MaxCharges { get; set; }
 }

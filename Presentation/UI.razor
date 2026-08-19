@@ -44,6 +44,34 @@
                     <div class="hud-bar-fill mana" style="width: @(EnergyWidth)%;"></div>
                 </div>
             </div>
+
+            <div class="hud-flasks-section">
+                <div class="hud-section-label">Equipped Flasks</div>
+                <div class="hud-flasks-container">
+                    @foreach ( var (slot, keyLabel) in new[] { (EquipmentSlot.Flask1, "[1]"), (EquipmentSlot.Flask2, "[2]") } )
+                    {
+                        var equippedFlask = InventoryState.GetEquippedItem( slot );
+                        var hasFlask = equippedFlask != null;
+                        var hasCharges = hasFlask && equippedFlask.RemainingCharges > 0;
+
+                        <div class="hud-flask-card @(hasFlask ? equippedFlask.RarityClass : "empty") @(hasCharges ? "charged" : "depleted")"
+                             onclick="@(() => InventoryState.UseFlask(slot))"
+                             pointer-events="all">
+                            <span class="hud-flask-key">@keyLabel</span>
+                            @if ( hasFlask )
+                            {
+                                <div class="hud-flask-icon">@equippedFlask.IconGlyph</div>
+                                <div class="hud-flask-count">@equippedFlask.RemainingCharges/@equippedFlask.MaxCharges</div>
+                            }
+                            else
+                            {
+                                <div class="hud-flask-icon empty">FL</div>
+                                <div class="hud-flask-count">-</div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
         }
         else
         {
@@ -62,7 +90,7 @@
             <div class="equipment-root">
                 <div class="equipment-header">
                     <span class="title">Character Equipment</span>
-                    <span class="subtitle">Equipment System</span>
+                    <span class="subtitle">Equipment & Flask System</span>
                 </div>
 
                 <div class="paperdoll-container">
@@ -102,6 +130,10 @@
                                     @if ( hasItem )
                                     {
                                         <div class="item-icon">@equippedItem.IconGlyph</div>
+                                        @if ( equippedItem.MaxCharges > 0 )
+                                        {
+                                            <span class="item-quantity">@equippedItem.RemainingCharges/@equippedItem.MaxCharges</span>
+                                        }
                                         <button class="unequip-btn" onclick="@(() => InventoryState.Unequip(equipmentSlot.Slot))">X</button>
                                     }
                                     else
@@ -177,10 +209,18 @@
                                     {
                                         <span class="item-quantity">x@slot.Item.Quantity</span>
                                     }
+                                    else if ( slot.Item.MaxCharges > 0 )
+                                    {
+                                        <span class="item-quantity">@slot.Item.RemainingCharges/@slot.Item.MaxCharges</span>
+                                    }
 
                                     @if ( CanEquip( slot ) )
                                     {
                                         <button class="slot-action" onclick="@(() => InventoryState.EquipItem(slot))">Equip</button>
+                                    }
+                                    else if ( slot.Item.Definition.IsConsumable )
+                                    {
+                                        <button class="slot-action use-btn" onclick="@(() => InventoryState.UseConsumable(slot))">Use</button>
                                     }
                                 </div>
                             }
@@ -202,6 +242,11 @@
                             <span class="rarity-badge @item.RarityClass">@item.Rarity</span>
                         </div>
                         <p class="item-desc">@item.Description</p>
+
+                        @if ( item.MaxCharges > 0 )
+                        {
+                            <div class="tooltip-extra charges-tag">Flask Charges: @item.RemainingCharges / @item.MaxCharges (Refills on Kill)</div>
+                        }
 
                         @if ( item.Stats.Attack > 0 || item.Stats.Defense > 0 || item.Stats.Speed > 0 )
                         {
@@ -240,6 +285,8 @@
 
 @code
 {
+    public static InventoryPanel LocalInventory { get; private set; }
+
     public enum UiPanel
     {
         None,
@@ -260,7 +307,9 @@
 
     private readonly EquipmentSlotView[] CenterEquipmentSlots =
     {
-        new( EquipmentSlot.Amulet, "Amulet", "AM" )
+        new( EquipmentSlot.Amulet, "Amulet", "AM" ),
+        new( EquipmentSlot.Flask1, "Flask 1", "FL1" ),
+        new( EquipmentSlot.Flask2, "Flask 2", "FL2" )
     };
 
     private readonly EquipmentSlotView[] RightEquipmentSlots =
@@ -278,6 +327,12 @@
     [Property] private float StaminaWidth { get; set; } = 100f;
     [Property] private float EnergyWidth { get; set; } = 100f;
     [Property] public UiPanel ActivePanel { get; set; } = UiPanel.None;
+
+    protected override void OnStart()
+    {
+        base.OnStart();
+        LocalInventory = InventoryState;
+    }
 
     protected override void OnUpdate()
     {
@@ -370,6 +425,77 @@
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), inset 0 0 15px rgba(90, 74, 58, 0.3);
     min-width: 320px;
     pointer-events: none;
+}
+
+.hud-flasks-section {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    border-top: 1px solid rgba(120, 100, 75, 0.4);
+    padding-top: 10px;
+    margin-top: 4px;
+}
+
+.hud-section-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: #a99b89;
+    letter-spacing: 1px;
+}
+
+.hud-flasks-container {
+    display: flex;
+    gap: 10px;
+}
+
+.hud-flask-card {
+    position: relative;
+    width: 64px;
+    height: 54px;
+    background: rgba(20, 17, 14, 0.95);
+    border: 1px solid #6b5a45;
+    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.hud-flask-card:hover {
+    border-color: #d4af37;
+    background: rgba(45, 38, 30, 0.98);
+}
+
+.hud-flask-card.depleted {
+    opacity: 0.55;
+}
+
+.hud-flask-key {
+    position: absolute;
+    top: 2px;
+    left: 4px;
+    font-size: 9px;
+    color: #e5cf9b;
+    font-weight: bold;
+}
+
+.hud-flask-icon {
+    font-size: 14px;
+    font-weight: bold;
+    color: #f1e6d2;
+    margin-top: 4px;
+}
+
+.hud-flask-icon.empty {
+    color: #6e6254;
+}
+
+.hud-flask-count {
+    font-size: 10px;
+    color: #e0d0b8;
+    font-weight: 600;
 }
 
 .menu-backdrop {
@@ -475,9 +601,6 @@
 
 .paperdoll-silhouette {
     flex: 1;
-}
-
-.paperdoll-silhouette {
     position: relative;
     display: flex;
     flex-direction: column;
@@ -485,7 +608,6 @@
     justify-content: center;
     gap: 12px;
     min-height: 360px;
-    /* width controlled by flex: 1 in parent */
 }
 
 .silhouette-head {
@@ -506,8 +628,9 @@
 
 .overlay-slots {
     position: absolute;
-    top: 92px;
+    top: 70px;
     display: flex;
+    flex-direction: column;
     gap: 8px;
 }
 
@@ -600,6 +723,12 @@
     color: #dfd5c6;
     font-size: 9px;
     padding: 2px 4px;
+    cursor: pointer;
+}
+
+.slot-action.use-btn {
+    border-color: #4ca357;
+    color: #8be096;
 }
 
 .unequip-btn {
@@ -689,6 +818,13 @@
     margin: 8px 0 0;
     color: #c5b7a4;
     font-size: 13px;
+}
+
+.charges-tag {
+    margin-top: 6px;
+    font-size: 11px;
+    color: #62b1d0;
+    font-style: italic;
 }
 
 .test-panel {

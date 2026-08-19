@@ -1,3 +1,4 @@
+
 using Sandbox.Citizen;
 using Sandbox.Code.Data;
 using Sandbox.Code.Systems;
@@ -8,9 +9,8 @@ public sealed class Player : Actor
 	
 	public static Player Local { get; private set; }
 	[Property] public SkinnedModelRenderer BodyRenderer { get; set; }
-	private Vector3 _knockbackVelocity;
 	private PlayerController _playerController;
-
+	
 	// Load the "player" / hero stat preset from MobRegistry
 	protected override string GetMobPresetId() => "player";
 	
@@ -35,11 +35,83 @@ public sealed class Player : Actor
 	{
 		base.OnUpdate();
 		UpdatePlayerMovementStats();
+		HandleFlaskHotkeys();
 		if ( Combat.CanAttack )
 		{
 			HandleCombatInput();
 		}
 	}
+	
+	private void HandleFlaskHotkeys()
+	{
+		if ( Input.Keyboard.Pressed( "1" ) )
+		{
+			Presentation.UI.LocalInventory?.UseFlask( EquipmentSlot.Flask1 );
+		}
+		if ( Input.Keyboard.Pressed( "2" ) )
+		{
+			Presentation.UI.LocalInventory?.UseFlask( EquipmentSlot.Flask2 );
+		}
+	}
+
+	public void OnEnemyKilled( Actor enemy )
+	{
+		Log.Info( $"[Player] Enemy slain: {enemy.GameObject.Name}. Refilling flasks!" );
+		Presentation.UI.LocalInventory?.RefillFlasks( 1 );
+	}
+
+	public void ApplyFlaskEffect( ItemDef flaskDef )
+	{
+		if ( flaskDef?.Consumable == null || StatSheet == null ) return;
+
+		var consumable = flaskDef.Consumable;
+		if ( consumable.RestoreHealth > 0f )
+		{
+			float maxHp = StatSheet.MaxHealth?.Value ?? 100f;
+			StatSheet.CurrentHealth = System.MathF.Min( maxHp, StatSheet.CurrentHealth + consumable.RestoreHealth );
+			Log.Info( $"[Flask] Restored {consumable.RestoreHealth} HP -> {StatSheet.CurrentHealth}/{maxHp}" );
+		}
+
+		if ( consumable.RestoreEnergy > 0f )
+		{
+			float maxEnergy = StatSheet.MaxEnergy?.Value ?? 100f;
+			StatSheet.CurrentEnergy = System.MathF.Min( maxEnergy, StatSheet.CurrentEnergy + consumable.RestoreEnergy );
+			Log.Info( $"[Flask] Restored {consumable.RestoreEnergy} Mana -> {StatSheet.CurrentEnergy}/{maxEnergy}" );
+		}
+
+		if ( consumable.BuffEffect != null && Buffs != null )
+		{
+			Buffs.ApplyBuff( consumable.BuffEffect, StatSheet );
+		}
+	}
+
+	public bool UsePotion( Presentation.InventoryItem item )
+	{
+		if ( item?.Definition?.Consumable == null || StatSheet == null ) return false;
+
+		var consumable = item.Definition.Consumable;
+
+		if ( consumable.BuffEffect != null && Buffs != null )
+		{
+			Buffs.ApplyBuff( consumable.BuffEffect, StatSheet );
+			Log.Info( $"[Potion] Consumed '{item.Name}' — applied buff '{consumable.BuffEffect.DisplayName}'" );
+		}
+
+		if ( consumable.RestoreHealth > 0f )
+		{
+			float maxHp = StatSheet.MaxHealth?.Value ?? 100f;
+			StatSheet.CurrentHealth = System.MathF.Min( maxHp, StatSheet.CurrentHealth + consumable.RestoreHealth );
+		}
+
+		if ( consumable.RestoreEnergy > 0f )
+		{
+			float maxEnergy = StatSheet.MaxEnergy?.Value ?? 100f;
+			StatSheet.CurrentEnergy = System.MathF.Min( maxEnergy, StatSheet.CurrentEnergy + consumable.RestoreEnergy );
+		}
+
+		return true;
+	}
+	
 
 	private void UpdatePlayerMovementStats()
 	{

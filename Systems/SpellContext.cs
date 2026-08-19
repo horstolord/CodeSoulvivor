@@ -32,6 +32,7 @@ public class SpellContext : ICostable
 	public float HomingStrength = 0f;
 	public HashSet<RuneElementTag> ElementTags = new();
 	public HashSet<AttackTag> AttackTags = new();
+	public Material VisualMaterial; // Set by whichever Force rune supplies one (first wins)
 
 	// Aggregated Elemental & Physical Damage Profile
 	public DamageProfileDef AccumulatedDamage = new();
@@ -66,6 +67,7 @@ public class SpellContext : ICostable
 			HomingStrength = HomingStrength,
 			ElementTags = new HashSet<RuneElementTag>( ElementTags ),
 			AttackTags = new HashSet<AttackTag>( AttackTags ),
+			VisualMaterial = VisualMaterial,
 			AccumulatedDamage = new DamageProfileDef
 			{
 				HealthDamage = AccumulatedDamage.HealthDamage,

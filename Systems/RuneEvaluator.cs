@@ -94,6 +94,7 @@ public static class RuneEvaluator
 					ctx.AccumulatedDamage.StaggerDamage += rune.StaggerDamage;
 					ctx.AccumulatedDamage.KnockbackForce += rune.KnockbackForce;
 					if ( rune.ElementTag.HasValue ) ctx.ElementTags.Add( rune.ElementTag.Value );
+					ctx.VisualMaterial ??= rune.VisualMaterial;
 					foreach ( var tag in rune.SpellTags ) ctx.AttackTags.Add( tag );
 					break;
 
@@ -134,6 +135,7 @@ public static class RuneEvaluator
 				Context = payloadCtx,
 				DeliveryType = methodRune.DeliveryType,
 				ProjectileTemplate = methodRune.ProjectileTemplate,
+				ProjectilePrefabPath = methodRune.ProjectilePrefabPath,
 				BeamRange = methodRune.Range,
 				AoERadius = methodRune.AoERadius
 			};

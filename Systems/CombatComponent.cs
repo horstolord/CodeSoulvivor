@@ -147,7 +147,11 @@ public sealed class CombatComponent : Component
 		CurrentAttack = context;
 		AttackElapsed = 0f;
 		_hitObjects.Clear();
-		ResolveActor( context.Attacker )?.PayCost( context.Attack );
+
+		var attacker = ResolveActor( context.Attacker );
+		attacker?.PayCost( context.Attack );
+		if ( attacker?.StateComp != null )
+			attacker.StateComp.CurrentState = ActorStateType.Attacking;
 
 		if ( context.Attack.ProjectileTemplate != null )
 			SpawnProjectile( context );
@@ -203,16 +207,16 @@ public sealed class CombatComponent : Component
 		// Tick cooldown independently — actor is unlocked but can't start a new attack yet.
 		if ( _cooldownTimer > 0f )
 			_cooldownTimer = MathF.Max( 0f, _cooldownTimer - Time.Delta );
-
+ 
 		if ( CurrentAttack == null )
 			return;
-
+ 
 		AttackElapsed += Time.Delta;
-
+ 
 		// Hit phases are authored relative to the end of startup, so offset by StartupTime.
 		// A phase with StartTime=0.18 on a StartupTime=0.4 attack fires at t=0.58 from input.
 		float activeElapsed = AttackElapsed - CurrentAttack.StartupTime;
-
+ 
 		if ( activeElapsed >= 0f )
 		{
 			foreach ( var phase in CurrentAttack.HitPhases )
@@ -223,7 +227,7 @@ public sealed class CombatComponent : Component
 				}
 			}
 		}
-
+ 
 		// Attack ends after startup + latest phase end + recovery.
 		var endTime = GetAttackEndTime( CurrentAttack );
 		if ( AttackElapsed >= endTime )
@@ -231,6 +235,11 @@ public sealed class CombatComponent : Component
 			// Start cooldown before clearing so callers can check IsOnCooldown immediately.
 			_cooldownTimer = CurrentAttack.CooldownTime;
 			Log.Info( $"Attack finished: {CurrentAttack.Attack.DisplayName} — cooldown {_cooldownTimer:F2}s" );
+ 
+			var attacker = ResolveActor( CurrentAttack.Attacker );
+			if ( attacker?.StateComp != null && attacker.StateComp.CurrentState == ActorStateType.Attacking )
+				attacker.StateComp.CurrentState = ActorStateType.Idle;
+ 
 			CurrentAttack = null;
 			_hitObjects.Clear();
 		}
@@ -302,32 +311,18 @@ public sealed class CombatComponent : Component
 		var actor = ResolveActor( target );
 		var attackerActor = ResolveActor( context.Attacker );
 		var damage = context.Damage;
-
+		var _playercontroller = GameObject.Components.GetInAncestorsOrSelf<PlayerController>();
+		
+ 
 		if ( attackerActor?.StatSheet != null )
 		{
 			damage = CombatMath.RollCrit( attackerActor.StatSheet, damage );
 			damage.KnockbackForce *= attackerActor.StatSheet.PhysicalForce.Value / 100f;
 		}
-
-		
-		var knockbackDirection = (context.Facing.Forward + Vector3.Up / 2f).Normal;
+ 
 		actor?.ApplyDamage( damage );
-
-		var _body = target.Components.GetInAncestorsOrSelf<Rigidbody>();
-		var renderer = context.Attacker.Components.GetInAncestorsOrSelf<SkinnedModelRenderer>();
-		var controller = target.Components.GetInAncestorsOrSelf<CharacterController>();
-
-		// 1. If it's a character (like the player) actually, this does nothing
-		if ( controller != null )
-		{
-			controller.Punch( (knockbackDirection + (Vector3.Up + 200)) * context.Damage.KnockbackForce );
-		}
-		// 2. If it's a standard physics body, use ApplyImpulse
-		else if ( _body != null )
-		{
-			_body.ApplyImpulse( (knockbackDirection + (Vector3.Up * 0.1f)) * context.Damage.KnockbackForce );
-		}
-		// 3. If it is static environment geometry, both are null and we do nothing safely
+		_playercontroller?.PreventGrounding(0.5f); // doesnt work if hit only once???
+		CombatMath.ApplyKnockback( target, context.Facing.Forward, damage.KnockbackForce );
 	}
 
 	private Actor ResolveActor( GameObject gameObject )

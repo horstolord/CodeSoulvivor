@@ -22,12 +22,12 @@ public static class BuffExamples
 	/// <summary>
 	/// A haste buff that increases AttackSpeed and MoveSpeed by 20% for 8 seconds.
 	/// </summary>
-	public static BuffDef Haste => new BuffDef( "haste", "Haste", 8f )
+	public static BuffDef Haste => new BuffDef( "haste", "Haste", 20f )
 	{
 		Modifiers = new List<BuffModifier>
 		{
-			new BuffModifier( "AttackSpeed", 20f, ModifierType.Percent ),
-			new BuffModifier( "MoveSpeed", 20f, ModifierType.Percent )
+			new BuffModifier( "AttackSpeed", 100f, ModifierType.Percent ),
+			new BuffModifier( "MoveSpeed", 100f, ModifierType.Percent )
 		}
 	};
 
@@ -60,7 +60,7 @@ public static class BuffExamples
 	{
 		Modifiers = new List<BuffModifier>
 		{
-			new BuffModifier( "HealthRegen", 2f, ModifierType.Flat )
+			new BuffModifier( "HealthRegen", 5f, ModifierType.Flat )
 		}
 	};
 
