@@ -191,11 +191,19 @@
                 <div class="inventory-grid">
                     @foreach ( var slot in InventoryState.Slots )
                     {
-                        <div class="inventory-slot @(slot.IsLocked ? "locked" : "") @(slot.Item != null ? slot.Item.RarityClass : "") @(InventoryState.SelectedSlotId == slot.Id ? "selected" : "")"
+                        var slotAction = CanEquip( slot ) ? "equip"
+                                       : slot.Item?.Definition?.IsConsumable == true ? "use"
+                                       : "none";
+
+                        <div class="inventory-slot @(slot.IsLocked ? "locked" : "") @(slot.Item != null ? slot.Item.RarityClass : "") @(InventoryState.SelectedSlotId == slot.Id ? "selected" : "") @(slotAction != "none" ? "actionable " + slotAction : "")"
                              onmousedown="@(() => InventoryState.OnSlotMouseDown(slot))"
                              onmouseup="@(() => InventoryState.OnSlotMouseUp(slot))"
                              onmouseover="@(() => InventoryState.SetHoveredItem(slot.Item))"
-                             onmouseout="@(() => InventoryState.SetHoveredItem(null))">
+                             onmouseout="@(() => InventoryState.SetHoveredItem(null))"
+                             onclick="@(() => {
+                                 if ( CanEquip(slot) ) InventoryState.EquipItem(slot);
+                                 else if ( slot.Item?.Definition?.IsConsumable == true ) InventoryState.UseConsumable(slot);
+                             })">
                             @if ( slot.IsLocked )
                             {
                                 <div class="slot-lock">LOCK</div>
@@ -214,13 +222,13 @@
                                         <span class="item-quantity">@slot.Item.RemainingCharges/@slot.Item.MaxCharges</span>
                                     }
 
-                                    @if ( CanEquip( slot ) )
+                                    @if ( slotAction == "equip" )
                                     {
-                                        <button class="slot-action" onclick="@(() => InventoryState.EquipItem(slot))">Equip</button>
+                                        <span class="slot-action-hint">Equip</span>
                                     }
-                                    else if ( slot.Item.Definition.IsConsumable )
+                                    else if ( slotAction == "use" )
                                     {
-                                        <button class="slot-action use-btn" onclick="@(() => InventoryState.UseConsumable(slot))">Use</button>
+                                        <span class="slot-action-hint use">Use</span>
                                     }
                                 </div>
                             }
@@ -232,11 +240,11 @@
                     }
                 </div>
 
-                @if ( InventoryState.HoveredItem != null )
-                {
-                    var item = InventoryState.HoveredItem;
+                <div class="item-tooltip">
+                    @if ( InventoryState.HoveredItem != null )
+                    {
+                        var item = InventoryState.HoveredItem;
 
-                    <div class="item-tooltip">
                         <div class="tooltip-header">
                             <span class="item-name @item.RarityClass">@item.Name</span>
                             <span class="rarity-badge @item.RarityClass">@item.Rarity</span>
@@ -265,8 +273,12 @@
                                 }
                             </div>
                         }
-                    </div>
-                }
+                    }
+                    else
+                    {
+                        <p class="tooltip-placeholder">Hover over an item to inspect it.</p>
+                    }
+                </div>
             </div>
         </div>
     }
@@ -712,23 +724,43 @@
     color: #f0dfc3;
 }
 
-.slot-action,
-.unequip-btn {
+.slot-action-hint {
     position: absolute;
-    right: 3px;
-    top: 3px;
-    border: 1px solid rgba(210, 190, 150, 0.35);
-    border-radius: 3px;
-    background: rgba(20, 18, 16, 0.9);
-    color: #dfd5c6;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(180, 155, 100, 0.85);
+    color: #0e0c0a;
     font-size: 9px;
-    padding: 2px 4px;
+    font-weight: bold;
+    text-align: center;
+    padding: 2px 0;
+    border-radius: 0 0 5px 5px;
+    opacity: 0;
+    pointer-events: none;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.slot-action-hint.use {
+    background: rgba(60, 160, 80, 0.85);
+}
+
+.inventory-slot.actionable {
     cursor: pointer;
 }
 
-.slot-action.use-btn {
+.inventory-slot.actionable:hover .slot-action-hint {
+    opacity: 1;
+}
+
+.inventory-slot.actionable:hover {
+    border-color: #c9a66b;
+    background: rgba(42, 35, 28, 0.98);
+}
+
+.inventory-slot.actionable.use:hover {
     border-color: #4ca357;
-    color: #8be096;
 }
 
 .unequip-btn {

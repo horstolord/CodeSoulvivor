@@ -78,4 +78,15 @@ public static class BuffExamples
 			new BuffModifier( "DamageMultiplier", 25f, ModifierType.Percent )
 		}
 	};
+
+	/// <summary>
+	/// A short speed boost for the slide traversal action (0.45s).
+	/// </summary>
+	public static BuffDef Slide => new BuffDef( "slide_speed", "Slide", 0.45f )
+	{
+		Modifiers = new List<BuffModifier>
+		{
+			new BuffModifier( "MoveSpeed", 500f, ModifierType.Flat )
+		}
+	};
 }

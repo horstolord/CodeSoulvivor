@@ -9,6 +9,7 @@ public sealed class Player : Actor
 	
 	public static Player Local { get; private set; }
 	[Property] public SkinnedModelRenderer BodyRenderer { get; set; }
+	public SlideControl Slide { get; private set; }
 	private PlayerController _playerController;
 	
 	// Load the "player" / hero stat preset from MobRegistry
@@ -20,6 +21,7 @@ public sealed class Player : Actor
 		MobRegistry.Initialize();
 		Local = this;
 		Combat = GameObject.Components.Get<CombatComponent>();
+		Slide = Components.GetOrCreate<SlideControl>();
 		_playerController = GameObject.Components.GetInAncestorsOrSelf<PlayerController>(  );
 		BodyRenderer ??= Components.GetInChildren<SkinnedModelRenderer>();
 		if ( BodyRenderer is null )
@@ -125,6 +127,10 @@ public sealed class Player : Actor
 			_playerController.WalkSpeed = baseSpeed;
 			_playerController.RunSpeed = baseSpeed * 2;
 			_playerController.JumpSpeed = StatSheet.JumpPower.Value * 3;
+			if ( Slide == null || !Slide.IsSliding )
+			{
+				_playerController.DuckedSpeed = baseSpeed * 0.5f;
+			}
 		}
 	}
 	private void HandleCombatInput()
