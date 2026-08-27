@@ -33,8 +33,8 @@ public sealed class SpellTestComponent : Component
 		if ( Input.Keyboard.Pressed( "4" ) ) LoadPreset( "cluster_bomb" );
 		if ( Input.Keyboard.Pressed( "5" ) ) LoadPreset( "raw_force" );
 
-		// Cast on Right Click (mouse2) or 'E' key
-		if ( Input.Keyboard.Pressed( "mouse2" ) || Input.Keyboard.Pressed( "E" ) )
+		// Cast on 'C' key
+		if ( Input.Keyboard.Pressed( "C" ) || Input.Keyboard.Pressed( "E" ) )
 		{
 			CastCurrentSpell();
 		}

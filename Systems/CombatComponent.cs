@@ -40,6 +40,10 @@ public sealed class CombatComponent : Component
 		if ( !ValidateRequest( request ) )
 			return false;
 
+		var attackerActor = ResolveActor( request.Attacker );
+		if ( attackerActor?.StateComp != null && attackerActor.StateComp.CurrentState != ActorStateType.Idle )
+			return false;
+
 		var context = BuildContext( request );
 		if ( !ValidateCost( context ) )
 			return false;

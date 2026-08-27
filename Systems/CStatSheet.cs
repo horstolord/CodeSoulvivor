@@ -50,6 +50,7 @@ public class StatSheet : Component
 	public Stat CritChance { get; private set; } // Percent
 	public Stat CritDamage { get; private set; } // Percent
 	public Stat Armor { get; private set; } // Damage reduction
+	public Stat BlockReduction {get; private set;}
 	public Stat ResistanceFire { get; private set; } // Percent
 	public Stat ResistanceFrost { get; private set; }
 	public Stat ResistanceAir { get; private set; }
@@ -116,6 +117,7 @@ public class StatSheet : Component
 		CritChance = new Stat( templateData.CritChance );
 		CritDamage = new Stat( 50f ); // Default 1.5x = 150%
 		Armor = new Stat( templateData.Armor );
+		BlockReduction = new Stat(0f);
 		ResistanceFire = new Stat( 0f );
 		ResistanceFrost = new Stat( 0f );
 		ResistanceAir = new Stat( 0f );
@@ -209,6 +211,7 @@ public class StatSheet : Component
 			"CritChance" => CritChance,
 			"CritDamage" => CritDamage,
 			"Armor" => Armor,
+			"BlockReduction" => BlockReduction,
 			"ResistanceFire" => ResistanceFire,
 			"ResistanceFrost" => ResistanceFrost,
 			"ResistanceAir" => ResistanceAir,
@@ -257,6 +260,7 @@ public class StatSheet : Component
 		yield return ( "CritChance", CritChance );
 		yield return ( "CritDamage", CritDamage );
 		yield return ( "Armor", Armor );
+		yield return ( "BlockReduction", BlockReduction );
 		yield return ( "ResistanceFire", ResistanceFire );
 		yield return ( "ResistanceFrost", ResistanceFrost );
 		yield return ( "ResistanceAir", ResistanceAir );

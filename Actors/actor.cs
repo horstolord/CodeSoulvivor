@@ -145,6 +145,14 @@ public class Actor : Component
 			float armorReduction = armor / (armor + 100f);
 			finalHealthDamage *= (1f-armorReduction);
 		}
+		// Block mitigation — only Health is reduced; Stagger/Stamina still land through a guard.
+		if ( StateComp != null && StateComp.CurrentState == ActorStateType.Blocking )
+		{
+			float blockReduction = StatSheet.BlockReduction.Value;
+			if ( blockReduction > 0f )
+				finalHealthDamage *= MathF.Max( 0f, 1f - blockReduction / 100f );
+		}
+
 		StatSheet.CurrentHealth  = MathF.Max( 0f, StatSheet.CurrentHealth  - finalHealthDamage );
 		StatSheet.CurrentStamina = MathF.Max( 0f, StatSheet.CurrentStamina - damage.StaminaDamage );
 		StatSheet.CurrentStagger = MathF.Max( 0f, StatSheet.CurrentStagger - damage.StaggerDamage );
