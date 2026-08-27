@@ -19,6 +19,7 @@ public class StatSheet : Component
 	public Stat Will { get; private set; }
 	public Stat Acuity { get; private set; }
 	public Stat Wisdom { get; private set; }
+	
 	public Stat MightPerLevel { get; private set; }
 	public Stat SwiftnessPerLevel { get; private set; }
 	public Stat EndurancePerLevel { get; private set; }
@@ -145,11 +146,9 @@ public class StatSheet : Component
 
 		Log.Info( $"StatSheet initialized: Swiftness={Swiftness.Value}, StaminaRegen={StaminaRegen.Value}, MaxStamina={MaxStamina.Value}" );
 	}
-
-	/// <summary>
 	/// Recalculates derived stats based on current attributes.
-	/// Call this after attribute modifiers are applied.
-	/// </summary>
+	/// Call this after attribute modifiers 
+	
 	public void RecalculateDerivedStats()
 	{
 		// Resource pools (based on attributes)

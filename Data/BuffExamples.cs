@@ -56,7 +56,7 @@ public static class BuffExamples
 	/// <summary>
 	/// A regeneration buff that increases HealthRegen by 2.0 flat points for 20 seconds.
 	/// </summary>
-	public static BuffDef RegenerationAura => new BuffDef( "regen_aura", "Regeneration Aura", 20f )
+	public static BuffDef Regeneration => new BuffDef( "regen", "Regeneration", 20f )
 	{
 		Modifiers = new List<BuffModifier>
 		{
