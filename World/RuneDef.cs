@@ -51,6 +51,7 @@ public class RuneDef : ICostable
 	public string ProjectilePrefabPath; // Self-contained prefab: mesh/particles + motion + Projectile
 
 	public string BeamPrefabPath;
+	public float BeamVisualLength = 100f;
 	// Modifier Runes: Mutator action for active SpellContext
 	public Action<SpellContext> ModifierEffect;
 

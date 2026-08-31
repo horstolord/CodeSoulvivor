@@ -8,8 +8,8 @@ namespace Sandbox.Code.Systems;
 /// </summary>
 public sealed class InteractControl : Component
 {
-	[Property] public float InteractRange { get; set; } = 1200f;
-	[Property] public float InteractRadius { get; set; } = 400f;
+	[Property] public float InteractRange { get; set; } = 120f;
+	[Property] public float InteractRadius { get; set; } = 40f;
 
 	private PlayerController _playerController;
 	private CameraComponent _camera;
@@ -33,7 +33,7 @@ public sealed class InteractControl : Component
 			CacheComponents();
 		}
 
-		if ( Input.Pressed( "Interact" ) )
+		if ( Input.Pressed( "interact" ) || Input.Pressed( "Interact" ) || Input.Keyboard.Pressed( "E" ) )
 		{
 			TryInteract();
 		}
@@ -58,8 +58,11 @@ public sealed class InteractControl : Component
 			if ( target == null )
 				continue;
 
-			var interactable = target.Components.Get<IInteractable>()
-				?? target.Components.GetInAncestorsOrSelf<IInteractable>();
+			var interactable = target.Components.Get<IInteractable>( FindMode.EverythingInSelfAndAncestors )
+				?? target.Components.Get<IInteractable>( FindMode.EverythingInSelfAndDescendants )
+				?? target.Components.GetInAncestorsOrSelf<IInteractable>()
+				?? target.Parent?.Components.Get<IInteractable>()
+				?? target.Components.Get<IInteractable>();
 			if ( interactable == null )
 				continue;
 

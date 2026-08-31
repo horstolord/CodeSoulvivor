@@ -25,13 +25,31 @@ public class LevelComponent : Component
 
 	// ============ INIT ============
 	/// <summary>Call once from Actor.OnStart after MobRegistry is loaded.</summary>
-	public void Initialize( MobData data )
+	public void Initialize( MobData data, int initialLevel = 1 )
 	{
 		_data         = data;
 		Level         = 1;
 		CurrentSouls  = 0f;
 		SoulThreshold = ThresholdForLevel( 1 );
+
+		if ( initialLevel > 1 )
+		{
+			SetLevel( initialLevel );
+		}
 	}
+
+	/// <summary>Sets the level directly, advancing level-by-level and firing OnLevelUp.</summary>
+	public void SetLevel( int targetLevel )
+	{
+		targetLevel = Math.Clamp( targetLevel, 1, MaxLevel );
+		while ( Level < targetLevel )
+		{
+			Level++;
+			SoulThreshold = ThresholdForLevel( Level );
+			OnLevelUp?.Invoke( Level );
+		}
+	}
+
 
 	// ============ SOUL GAIN ============
 	/// <summary>

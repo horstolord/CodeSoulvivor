@@ -213,11 +213,78 @@ public static class ItemData
 		},
 		Mods = new()
 	};
+	public static ItemDef longsword = new ItemDef
+	{
+		Id = "longsword",
+		Name = "Longsword",
+		Description = "A basic long blade found in the field.",
+		Category = ItemCategory.Equipment,
+		Rarity = ItemRarity.Common,
+		Stackable = false,
+		Tags = new() { "weapon", "sword", "metal", "tier1" },
+		Equipment = new EquipmentData
+		{
+			Slot = EquipmentSlot.MainHand1,
+			Stats = new EquipmentStatBlock { BaseDamage = 20, BaseAttackSpeed = 2.4f, PoiseDamage = 4, Weight = 3 }
+		},
+		Mods = new()
+	};
+	
+	public static ItemDef dagger = new ItemDef
+	{
+		Id = "dagger",
+		Name = "Dagger",
+		Description = "A basic blade found in the field.",
+		Category = ItemCategory.Equipment,
+		Rarity = ItemRarity.Common,
+		Stackable = false,
+		Tags = new() { "weapon", "sword", "metal", "tier1" },
+		Equipment = new EquipmentData
+		{
+			Slot = EquipmentSlot.MainHand1,
+			Stats = new EquipmentStatBlock { BaseDamage = 8, BaseAttackSpeed = 1f, PoiseDamage = 4, Weight = 3 }
+		},
+		Mods = new()
+	};
 
 	public static ItemDef leatherCap = new ItemDef
 	{
 		Id = "leather_cap",
 		Name = "Leather Cap",
+		Description = "Simple protection, better than nothing.",
+		Category = ItemCategory.Equipment,
+		Rarity = ItemRarity.Common,
+		Stackable = false,
+		Tags = new() { "armor", "leather", "light-armor", "tier1" },
+		Equipment = new EquipmentData
+		{
+			Slot = EquipmentSlot.Head,
+			Stats = new EquipmentStatBlock { Weight = 1, Armor = 40f }
+		},
+		Mods = new()
+	};
+	
+	public static ItemDef leatherArmor = new ItemDef
+	{
+		Id = "leather_armor",
+		Name = "Leather Armor",
+		Description = "Simple protection, better than nothing.",
+		Category = ItemCategory.Equipment,
+		Rarity = ItemRarity.Common,
+		Stackable = false,
+		Tags = new() { "armor", "leather", "light-armor", "tier1" },
+		Equipment = new EquipmentData
+		{
+			Slot = EquipmentSlot.Chest,
+			Stats = new EquipmentStatBlock { Weight = 1, Armor = 40f }
+		},
+		Mods = new()
+	};
+	
+	public static ItemDef leatherBoot = new ItemDef
+	{
+		Id = "leather_boot",
+		Name = "Leather Boots",
 		Description = "Simple protection, better than nothing.",
 		Category = ItemCategory.Equipment,
 		Rarity = ItemRarity.Common,

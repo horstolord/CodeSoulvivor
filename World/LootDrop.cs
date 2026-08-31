@@ -17,11 +17,17 @@ public sealed class LootDrop : Component, IInteractable
 	[Property] public float BobSpeed { get; set; } = 3f;
 
 	private float _age;
+	private float _baseZ;
+	private bool _initialized;
 
 	protected override void OnStart()
 	{
-		// Placeholder visual — I'll assign the real prefab path once I've authored it.
-		if ( ResourceLibrary.TryGet<PrefabFile>( "item.prefab", out var prefabFile ) )
+		_baseZ = GameObject.WorldPosition.z;
+		_initialized = true;
+
+		// Try loading item.prefab or fallback to lootitem.prefab
+		if ( ResourceLibrary.TryGet<PrefabFile>( "item.prefab", out var prefabFile )
+		     || ResourceLibrary.TryGet<PrefabFile>( "lootitem.prefab", out prefabFile ) )
 		{
 			var visual = SceneUtility.GetPrefabScene( prefabFile ).Clone();
 			visual.Parent = GameObject;
@@ -29,12 +35,18 @@ public sealed class LootDrop : Component, IInteractable
 		}
 		else
 		{
-			Log.Warning( "[LootDrop] Could not find lootitem.prefab in ResourceLibrary — assign one." );
+			Log.Warning( "[LootDrop] Could not find item.prefab or lootitem.prefab in ResourceLibrary — assign one." );
 		}
 	}
 
 	protected override void OnUpdate()
 	{
+		if ( !_initialized )
+		{
+			_baseZ = GameObject.WorldPosition.z;
+			_initialized = true;
+		}
+
 		_age += Time.Delta;
 		if ( _age >= Lifetime )
 		{
@@ -43,13 +55,14 @@ public sealed class LootDrop : Component, IInteractable
 		}
 
 		float bob = MathF.Sin( _age * BobSpeed ) * BobHeight;
-		GameObject.LocalPosition = GameObject.LocalPosition.WithZ( bob );
+		GameObject.WorldPosition = GameObject.WorldPosition.WithZ( _baseZ + bob );
 	}
 
-	bool IInteractable.CanInteract( GameObject interactor ) => Item != null;
+	public bool CanInteract( GameObject interactor ) => true;
 
-	void IInteractable.OnInteract( GameObject interactor )
+	public void OnInteract( GameObject interactor )
 	{
+		Item ??= LootGenerator.RollDrop( 1, 10f ) ?? ItemInstance.FromDefinition( ItemData.shortsword );
 		if ( Item == null ) return;
 
 		var inventory = Presentation.UI.LocalInventory;

@@ -137,6 +137,7 @@ public static class RuneEvaluator
 				ProjectileTemplate = methodRune.ProjectileTemplate,
 				ProjectilePrefabPath = methodRune.ProjectilePrefabPath,
 				BeamRange = methodRune.Range,
+				BeamVisualLength = methodRune.BeamVisualLength, 
 				AoERadius = methodRune.AoERadius
 			};
 			outPayloads.Add( payload );

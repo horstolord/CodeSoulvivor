@@ -12,6 +12,7 @@ public struct SpellPayload
 	public ProjectileTemplate ProjectileTemplate;
 	public string ProjectilePrefabPath;
 	public float BeamRange;
+	public float BeamVisualLength;
 	public float AoERadius;
 }
 
@@ -130,16 +131,19 @@ public class BeamDeliveryMethod : ISpellDeliveryMethod
 		};
 		var casterSheet = ctx.Caster.Components.GetInAncestorsOrSelf<Actor>()?.StatSheet;
 		damageDef = CombatMath.RollCrit( casterSheet, damageDef );
-		// In s&box, Assets/ is the filesystem root — paths must NOT include "assets/" prefix.
 		// ResourceLibrary.Get throws if not found; TryGet returns false silently.
 		if ( ResourceLibrary.TryGet<PrefabFile>( "beamblue.prefab", out var prefabFile ) )
 		{
-			var beamInstance = SceneUtility.GetPrefabScene( prefabFile ).Clone(config);
-			// Place it at the cast origin, aimed in the fire direct.
+			var beamInstance = SceneUtility.GetPrefabScene( prefabFile ).Clone( config );
 			beamInstance.WorldPosition = ctx.Origin;
 			
-			beamInstance.Enabled = true;
 
+			float hitDistance = (targetPos - ctx.Origin).Length;
+			float refLength = payload.BeamVisualLength > 0f ? payload.BeamVisualLength : 100f;
+			float scale = MathF.Max( 0.01f, hitDistance / refLength );
+			beamInstance.LocalScale = beamInstance.LocalScale.WithX( scale );
+
+			beamInstance.Enabled = true;
 		}
 		else
 		{

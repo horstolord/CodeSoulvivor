@@ -15,6 +15,8 @@ public class Actor : Component
 	protected virtual string GetMobPresetId() => "goblin";
 	
 
+	[Property] public int InitialLevel { get; set; } = 1;
+
 	public StatSheet      StatSheet { get; private set; }
 	public LevelComponent Leveling  { get; private set; }
 	public CombatComponent Combat;
@@ -62,13 +64,14 @@ public class Actor : Component
 		// InitializeFromRegistry replaces Stat instances — re-bind any already-equipped gear
 		Equipment?.ReapplyAll();
 
-		// 3. Level component — wire up level-up callback
+		// 3. Level component — wire up level-up callback and apply initial level
 		Leveling = Components.GetOrCreate<LevelComponent>();
-		Leveling.Initialize( _mobData );
 		Leveling.OnLevelUp += HandleLevelUp;
+		Leveling.Initialize( _mobData, InitialLevel );
 
 		Log.Info( $"{GameObject.Name} ({_mobData.Name}) ready — HP={StatSheet.CurrentHealth:F0}, Lvl={Leveling.Level}" );
 	}
+
 
 	// ============ LEVELING ============
 	private void HandleLevelUp( int newLevel )
