@@ -174,6 +174,18 @@ public sealed class InventoryPanel
         }
     }
 
+    public bool AddItem( ItemInstance instance )
+    {
+        if ( instance == null ) return false;
+
+        var slot = Slots.FirstOrDefault( s => s.Item == null && !s.IsLocked );
+        if ( slot == null ) return false;
+
+        slot.Item = InventoryItem.FromInstance( instance, instance.StackCount );
+        Revision++;
+        return true;
+    }
+
     public void Unequip( EquipmentSlot equipmentSlot )
     {
         var normalizedSlot = NormalizeSlot( equipmentSlot );
@@ -209,13 +221,15 @@ public sealed class InventoryPanel
 
         // Forward to the gameplay EquipmentControl so stat modifiers are actually applied
         var def = itemToEquip.Definition;
-        Log.Info( $"[Inventory] Equipping '{def?.Name}' — Definition.Stats.Armor={def?.Equipment?.Stats?.Armor:F1}, Mods={def?.Mods?.Count ?? 0}" );
-        Actors.Player.Local?.Equipment?.Equip( def );
+        var instance = itemToEquip.Instance;
+        Log.Info( $"[Inventory] Equipping '{def?.Name}' — Definition.Stats.Armor={def?.Equipment?.Stats?.Armor:F1}, Mods={instance?.RolledMods?.Count ?? def?.Mods?.Count ?? 0}" );
+        Actors.Player.Local?.Equipment?.Equip( itemToEquip.Instance );
 
         SelectedSlotId = null;
         draggingSlotId = null;
         Revision++;
     }
+
 
     private void InitializeGrid()
     {
@@ -267,7 +281,8 @@ public sealed class InventorySlot
 
 public sealed class InventoryItem
 {
-    public ItemDef Definition { get; init; }
+    public ItemInstance Instance { get; init; }
+    public ItemDef Definition => Instance?.Definition;
     public string Name => Definition?.Name ?? "Unknown Item";
     public string Description => Definition?.Description ?? "";
     public ItemRarity Rarity => Definition?.Rarity ?? ItemRarity.Common;
@@ -280,21 +295,30 @@ public sealed class InventoryItem
 
     public static InventoryItem FromDefinition( ItemDef definition, int quantity = 1 )
     {
+        var instance = ItemInstance.FromDefinition( definition, quantity );
+        return FromInstance( instance, quantity );
+    }
+
+    public static InventoryItem FromInstance( ItemInstance instance, int quantity = 1 )
+    {
+        var definition = instance?.Definition;
         var stats = definition?.Equipment?.Stats;
-        int charges = definition?.Consumable?.Charges ?? 0;
+        int charges = instance != null ? instance.RemainingCharges : (definition?.Consumable?.Charges ?? 0);
+        int maxCharges = instance != null ? instance.MaxCharges : (definition?.Consumable?.Charges ?? 0);
+        var mods = instance?.RolledMods ?? definition?.Mods;
 
         return new InventoryItem
         {
-            Definition = definition,
+            Instance = instance,
             Quantity = quantity,
             RemainingCharges = charges,
-            MaxCharges = charges,
+            MaxCharges = maxCharges,
             IconGlyph = GetIconGlyph( definition ),
             Stats = new InventoryItemStats
             {
                 Attack = (int)(stats?.BaseDamage ?? 0f),
                 Defense = (int)(stats?.Armor ?? 0f),
-                Speed = (int)(definition?.Mods?.Where( mod => mod.StatName == "Swiftness" ).Sum( mod => mod.Value ) ?? 0f)
+                Speed = (int)(mods?.Where( mod => mod.StatName == "Swiftness" ).Sum( mod => mod.Value ) ?? 0f)
             }
         };
     }

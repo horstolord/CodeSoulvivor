@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Sandbox.Code.Actors;
 using Sandbox.Code.Data;
 
@@ -16,16 +17,16 @@ public class EquipmentControl : Component
 
 	private sealed class EquippedEntry
 	{
-		public ItemDef Item;
+		public ItemInstance Item;
 		public List<(Stat Stat, StatModifier Modifier)> AppliedModifiers = new();
 	}
 
 	// ============ PUBLIC API ============
 
-	public ItemDef GetEquippedItem( EquipmentSlot slot ) =>
+	public ItemInstance GetEquippedItem( EquipmentSlot slot ) =>
 		_slots.TryGetValue( NormalizeSlot( slot ), out var entry ) ? entry.Item : null;
 
-	public ItemDef GetEquippedWeapon() => GetEquippedItem( EquipmentSlot.MainHand1 );
+	public ItemInstance GetEquippedWeapon() => GetEquippedItem( EquipmentSlot.MainHand1 );
 
 	/// <summary>
 	/// Builds a live AttackDef from the currently equipped main-hand weapon.
@@ -34,17 +35,18 @@ public class EquipmentControl : Component
 	public AttackDef GetWeaponAttackDef()
 	{
 		var weapon = GetEquippedWeapon();
-		if ( weapon?.Equipment?.Stats == null )
+		if ( weapon?.Definition?.Equipment?.Stats == null )
 			return null;
 
-		return AttackData.BuildWeaponAttack( weapon );
+		return AttackData.BuildWeaponAttack( weapon.Definition );
 	}
 
 	/// <summary>
-	/// Equip an item. Automatically unequips whatever was in that slot first.
+	/// Equip an item instance. Automatically unequips whatever was in that slot first.
 	/// </summary>
-	public void Equip( ItemDef item )
+	public void Equip( ItemInstance instance )
 	{
+		var item = instance?.Definition;
 		if ( item?.Equipment == null ) return;
 
 		var actor = Components.GetInAncestorsOrSelf<Actor>();
@@ -68,11 +70,11 @@ public class EquipmentControl : Component
 		if ( _slots.ContainsKey( slot ) )
 			UnequipInternal( slot, statSheet );
 
-		var entry = new EquippedEntry { Item = item };
+		var entry = new EquippedEntry { Item = instance };
 		var stats = item.Equipment.Stats;
 
-		// 1) Named Mods (Might, Will, etc.)
-		foreach ( var mod in item.Mods ?? Enumerable.Empty<ModData>() )
+		// 1) Named Mods (Might, Will, etc.) from RolledMods
+		foreach ( var mod in instance.RolledMods ?? Enumerable.Empty<ModData>() )
 		{
 			var stat = statSheet.GetStat( mod.StatName );
 			if ( stat == null )
@@ -108,12 +110,12 @@ public class EquipmentControl : Component
 
 		_slots[slot] = entry;
 
-		bool touchedAttribute = (item.Mods ?? Enumerable.Empty<ModData>()).Any( m => IsAttributeStat( m.StatName ) );
+		bool touchedAttribute = (instance.RolledMods ?? Enumerable.Empty<ModData>()).Any( m => IsAttributeStat( m.StatName ) );
 		if ( touchedAttribute )
 			statSheet.RecalculateDerivedStats();
 
 		Log.Info( $"[EquipmentControl] Equipped '{item.Name}' in {slot}. " +
-		          $"Stats.Armor={stats?.Armor:F1}, mods=[{string.Join( ", ", (item.Mods ?? Enumerable.Empty<ModData>()).Select( m => $"{m.StatName}:{m.Value}" ) )}], " +
+		          $"Stats.Armor={stats?.Armor:F1}, mods=[{string.Join( ", ", (instance.RolledMods ?? Enumerable.Empty<ModData>()).Select( m => $"{m.StatName}:{m.Value}" ) )}], " +
 		          $"applied={entry.AppliedModifiers.Count}, Armor now={statSheet.Armor.Value:F1} (base={statSheet.Armor.BaseValue:F1})" );
 	}
 
@@ -159,7 +161,7 @@ public class EquipmentControl : Component
 			stat.RemoveModifier( modifier );
 
 		_slots.Remove( slot );
-		Log.Info( $"[EquipmentControl] Unequipped '{entry.Item.Name}' from slot {slot}." );
+		Log.Info( $"[EquipmentControl] Unequipped '{entry.Item?.Definition?.Name ?? "Item"}' from slot {slot}." );
 	}
 
 	private static bool IsAttributeStat( string name ) =>

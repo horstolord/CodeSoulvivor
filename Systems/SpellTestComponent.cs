@@ -34,7 +34,7 @@ public sealed class SpellTestComponent : Component
 		if ( Input.Keyboard.Pressed( "5" ) ) LoadPreset( "raw_force" );
 
 		// Cast on 'C' key
-		if ( Input.Keyboard.Pressed( "C" ) || Input.Keyboard.Pressed( "E" ) )
+		if ( Input.Keyboard.Pressed( "C" )  )
 		{
 			CastCurrentSpell();
 		}

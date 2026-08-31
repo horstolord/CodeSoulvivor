@@ -178,6 +178,7 @@ public class Actor : Component
 		if (!this.IsValid()) return;
 		GameObject.Destroy();
 		SpawnSoulOrb();
+		SpawnLootDrop();
 	}
 
 	private void SpawnSoulOrb()
@@ -194,6 +195,23 @@ public class Actor : Component
 		var orb = orbGO.Components.Create<SoulOrb>();
 		orb.SoulValue = totalSouls;
 	}
+
+	private void SpawnLootDrop()
+	{
+		if ( _mobData == null ) return;
+
+		int level = Leveling?.Level ?? 1;
+		var instance = LootGenerator.RollDrop( level, _mobData.BaseSoulValue );
+		if ( instance == null ) return; // drop-chance roll failed, nothing spawns
+
+		var dropGO = Scene.CreateObject();
+		dropGO.WorldPosition = GameObject.WorldPosition;
+		dropGO.Name = $"LootDrop_{instance.Definition?.Id}";
+
+		var drop = dropGO.Components.Create<LootDrop>();
+		drop.Item = instance;
+	}
+
 
 	// ============ TICK ============
 	protected override void OnUpdate()

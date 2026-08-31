@@ -1,3 +1,7 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
 namespace Sandbox.Code.Data;
 
 public sealed class ItemDef
@@ -53,9 +57,25 @@ public sealed class CraftingData
 }
 public sealed class ItemInstance
 {
-	public string InstanceId { get; init; }
+	public string InstanceId { get; init; } = Guid.NewGuid().ToString();
 	public ItemDef Definition { get; init; }
 	public int StackCount { get; set; } = 1;
 	public int RemainingCharges { get; set; }
 	public int MaxCharges { get; set; }
+	public List<ModData> RolledMods { get; init; } = new();
+
+	/// <summary>Wraps a hand-authored ItemDef with no procedural rolls — RolledMods mirrors Definition.Mods.</summary>
+	public static ItemInstance FromDefinition( ItemDef def, int stackCount = 1 )
+	{
+		int charges = def?.Consumable?.Charges ?? 0;
+		return new ItemInstance
+		{
+			Definition = def,
+			StackCount = stackCount,
+			RemainingCharges = charges,
+			MaxCharges = charges,
+			RolledMods = new List<ModData>( def?.Mods ?? Enumerable.Empty<ModData>() )
+		};
+	}
 }
+
