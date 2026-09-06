@@ -60,11 +60,18 @@ public sealed class Projectile : Component
 
         Components.Get<IProjectileMotion>()?.Tick( this, Time.Delta );
 
+        // Face the direction actually traveled this tick — works for straight,
+        // arcing, or any future curving/homing motion, without motion-specific code.
+        var moveDelta = GameObject.WorldPosition - _lastPosition;
+        if ( moveDelta.LengthSquared > 0.01f )
+	        GameObject.WorldRotation = Rotation.LookAt( moveDelta.Normal, Vector3.Up );
+
         // Sweep-trace from last position to current, so fast projectiles can't tunnel
         var hits = Scene.Trace
-            .Box( Template.CollisionBoxSize, _lastPosition, GameObject.WorldPosition )
-            .IgnoreGameObjectHierarchy( Payload.Caster )
-            .RunAll();
+	        .Box( Template.CollisionBoxSize, _lastPosition, GameObject.WorldPosition )
+	        .IgnoreGameObjectHierarchy( Payload.Caster )
+	        .RunAll();
+
 
         foreach ( var hit in hits )
         {

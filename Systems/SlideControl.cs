@@ -8,16 +8,16 @@ namespace Sandbox.Code.Systems;
 
 public sealed class SlideControl : Component
 {
-	[Property] public float SlideDuration { get; set; } = 1f;
+	[Property] public float SlideDuration { get; set; } = 5f;
 	[Property] public float BurstWindow { get; set; } = 0.2f;
 	[Property] public float SpeedBoost { get; set; } = 750f;
 	[Property] public float SlideDuckedSpeed { get; set; } = 10f;
-	[Property] public float MinSpeedThreshold { get; set; } = 100f;
+	[Property] public float MinSpeedThreshold { get; set; } = 10f;
 	[Property] public float Cooldown { get; set; } = 0.6f;
 	[Property] public float StaminaCost { get; set; } = 0f;
 
 	/// <summary>How long Foot IK is enabled after the slide ends to absorb the transition jerk.</summary>
-	[Property] public float FootIkExitDuration { get; set; } = 0.4f;
+	[Property] public float FootIkExitDuration { get; set; } = 1f;
 
 	[Property] public bool IsSliding { get; private set; } = false;
 
@@ -124,13 +124,14 @@ public sealed class SlideControl : Component
 
 	public void StartSlide()
 	{
-		_isFootIkActive = false;
-		SetFootIk( false );
-
 		IsSliding = true;
 		TimeSinceSlide = 0f;
 		SlideEndTime = SlideDuration;
 		_burstElapsed = 0f;
+
+		// Enable Foot IK for the duration of the slide
+		_isFootIkActive = true;
+		SetFootIk( true );
 
 		var currentVel = _playerController.Velocity.WithZ( 0 );
 		_slideDirection = currentVel.LengthSquared > 0.01f
@@ -153,18 +154,23 @@ public sealed class SlideControl : Component
 	{
 		IsSliding = false;
 
+		// Toggle b_grounded on the player at the beginning of end slide
+		if ( _bodyRenderer.IsValid() )
+		{
+			_bodyRenderer.Set( "b_grounded", false );
+		}
+
 		if ( _statSheet != null && _playerController != null )
 		{
 			_playerController.DuckedSpeed = (_statSheet.MoveSpeed.Value + 100f) * 0.5f;
 		}
 
 		// Reset animation back to normal locomotion / standing
-		SetAnimationState( CitizenAnimationHelper.SpecialMoveStyle.None, 0f );
+		SetAnimationState( CitizenAnimationHelper.SpecialMoveStyle.None, 1f );
 
-		// Enable Foot IK briefly to absorb the standing transition jerk
+		// Foot IK remains active for FootIkExitDuration (already enabled during slide)
 		_timeSinceSlideEnd = 0f;
-		_isFootIkActive = true;
-		SetFootIk( true );
+		// _isFootIkActive stays true - will be disabled in OnUpdate after FootIkExitDuration
 
 		// Hand ducking control straight back to normal input
 		_playerController.IsDucking = Input.Down( "duck" ) || Input.Down( "crouch" );

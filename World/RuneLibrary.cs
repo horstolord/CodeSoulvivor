@@ -16,7 +16,7 @@ public static class RuneLibrary
 		KnockbackForce = 1200f, // placeholder — tune to taste
 		ElementTag = RuneElementTag.Fire,
 		SpellTags = new() { AttackTag.Fire },
-		Scaling = new RuneScalingDef { WillToPower = 1f }
+		Scaling = new RuneScalingDef { WillToPower = 2f }
 		// VisualMaterial = Material.Load( "materials/fx/fire_orb.vmat" ), // <- swap for real asset path
 	};
  
@@ -33,6 +33,33 @@ public static class RuneLibrary
 		Scaling = new RuneScalingDef { WillToPower = 1f }
 		// VisualMaterial = Material.Load( "materials/fx/frost_orb.vmat" ), // <- swap for real asset path
 	};
+	
+	public static readonly RuneDef AirForce = new RuneDef
+	{
+		Id = "air_force",
+		DisplayName = "Air Force",
+		Category = RuneCategory.Force,
+		BasePower = 20f,
+		EnergyCost = 4f,
+		KnockbackForce = 4000f, // placeholder — tune to taste
+		ElementTag = RuneElementTag.Air,
+		SpellTags = new() { AttackTag.Air },
+		Scaling = new RuneScalingDef { WillToPower = 1.5f }
+		// VisualMaterial = Material.Load( "materials/fx/frost_orb.vmat" ), // <- swap for real asset path
+	};
+
+	public static readonly RuneDef EarthForce = new RuneDef
+	{
+		Id = "earth_force",
+		DisplayName = "Earth Force",
+		Category = RuneCategory.Force,
+		BasePower = 28f,
+		EnergyCost = 5f,
+		KnockbackForce = 2200f, // placeholder — tune to taste
+		ElementTag = RuneElementTag.Earth,
+		SpellTags = new() { AttackTag.Earth },
+		Scaling = new RuneScalingDef { WillToPower = 2f }
+	};
  
 	public static readonly RuneDef ProjectileMethod = new RuneDef
 	{
@@ -44,6 +71,45 @@ public static class RuneLibrary
 		EnergyCost = 2f,
 		ProjectileTemplate = new ProjectileTemplate { Speed = 1200f, Lifetime = 4f },
 		ProjectilePrefabPath = "fireballin'.prefab", 
+		Scaling = new RuneScalingDef { AcuityToCastSpeed = 2f }
+	};
+
+	public static readonly RuneDef AirProjectileMethod = new RuneDef
+	{
+		Id = "method_projectile_air",
+		DisplayName = "Air Projectile Method",
+		Category = RuneCategory.Method,
+		DeliveryType = RuneDeliveryType.Projectile,
+		CastDelay = 0.15f,
+		EnergyCost = 2f,
+		ProjectileTemplate = new ProjectileTemplate { Speed = 1200f, Lifetime = 4f },
+		ProjectilePrefabPath = "airballin'.prefab",
+		Scaling = new RuneScalingDef { AcuityToCastSpeed = 2f }
+	};
+
+	public static readonly RuneDef FrostProjectileMethod = new RuneDef
+	{
+		Id = "method_projectile_frost",
+		DisplayName = "Frost Projectile Method",
+		Category = RuneCategory.Method,
+		DeliveryType = RuneDeliveryType.Projectile,
+		CastDelay = 0.15f,
+		EnergyCost = 2f,
+		ProjectileTemplate = new ProjectileTemplate { Speed = 1200f, Lifetime = 4f },
+		ProjectilePrefabPath = "frostballin'.prefab",
+		Scaling = new RuneScalingDef { AcuityToCastSpeed = 2f }
+	};
+
+	public static readonly RuneDef EarthProjectileMethod = new RuneDef
+	{
+		Id = "method_projectile_earth",
+		DisplayName = "Earth Projectile Method",
+		Category = RuneCategory.Method,
+		DeliveryType = RuneDeliveryType.Projectile,
+		CastDelay = 0.15f,
+		EnergyCost = 2f,
+		ProjectileTemplate = new ProjectileTemplate { Speed = 1000f, Lifetime = 4f },
+		ProjectilePrefabPath = "earthballin'.prefab",
 		Scaling = new RuneScalingDef { AcuityToCastSpeed = 2f }
 	};
  
@@ -66,7 +132,7 @@ public static class RuneLibrary
 		DisplayName = "Empower",
 		Category = RuneCategory.Modifier,
 		EnergyCost = 5f,
-		ModifierEffect = ( ctx ) => { ctx.DamageMultiplier *= 1.5f; }
+		ModifierEffect = ApplyEmpower
 	};
  
 	public static readonly RuneDef DualCast = new RuneDef
@@ -76,8 +142,13 @@ public static class RuneLibrary
 		Category = RuneCategory.Multicast,
 		MulticastDrawCount = 2,
 		EnergyCost = 8f,
-		ModifierEffect = ( ctx ) => { ctx.SpreadAngle += 15f; }
+		ModifierEffect = ApplyDualCastSpread
 	};
+
+	// Named methods instead of lambdas — static lambdas break after s&box hotreload
+	// ("Unable to find matching substitution for a lambda method").
+	static void ApplyEmpower( SpellContext ctx ) => ctx.DamageMultiplier *= 1.5f;
+	static void ApplyDualCastSpread( SpellContext ctx ) => ctx.SpreadAngle += 15f;
  
 	public static readonly RuneDef ClusterTrigger = new RuneDef
 	{
@@ -107,6 +178,9 @@ public static class RuneLibrary
 			"dual_frost_beam" => new List<RuneDef> { DualCast, FrostForce, BeamMethod },
 			"cluster_bomb" => new List<RuneDef> { ClusterTrigger, FireForce, ProjectileMethod },
 			"raw_force" => new List<RuneDef> { FireForce },
+			"airball" => new List<RuneDef> { AirForce, AirProjectileMethod },
+			"frostball" => new List<RuneDef> { FrostForce, FrostProjectileMethod },
+			"earthball" => new List<RuneDef> { EarthForce, EarthProjectileMethod },
 			_ => new List<RuneDef> { FireForce, ProjectileMethod }
 		};
 	}

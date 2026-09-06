@@ -209,7 +209,7 @@ public static class ItemData
 		Equipment = new EquipmentData
 		{
 			Slot = EquipmentSlot.MainHand1,
-			Stats = new EquipmentStatBlock { BaseDamage = 10, BaseAttackSpeed = 1.8f, PoiseDamage = 4, Weight = 3 }
+			Stats = new EquipmentStatBlock { BaseDamage = 10, BaseAttackSpeed = 2f, PoiseDamage = 4, Weight = 3 }
 		},
 		Mods = new()
 	};
@@ -225,7 +225,7 @@ public static class ItemData
 		Equipment = new EquipmentData
 		{
 			Slot = EquipmentSlot.MainHand1,
-			Stats = new EquipmentStatBlock { BaseDamage = 20, BaseAttackSpeed = 2.4f, PoiseDamage = 4, Weight = 3 }
+			Stats = new EquipmentStatBlock { BaseDamage = 24, BaseAttackSpeed = 1f, PoiseDamage = 4, Weight = 3 }
 		},
 		Mods = new()
 	};
@@ -242,7 +242,7 @@ public static class ItemData
 		Equipment = new EquipmentData
 		{
 			Slot = EquipmentSlot.MainHand1,
-			Stats = new EquipmentStatBlock { BaseDamage = 8, BaseAttackSpeed = 1f, PoiseDamage = 4, Weight = 3 }
+			Stats = new EquipmentStatBlock { BaseDamage = 8, BaseAttackSpeed = 3f, PoiseDamage = 4, Weight = 3 }
 		},
 		Mods = new()
 	};
@@ -259,7 +259,7 @@ public static class ItemData
 		Equipment = new EquipmentData
 		{
 			Slot = EquipmentSlot.Head,
-			Stats = new EquipmentStatBlock { Weight = 1, Armor = 40f }
+			Stats = new EquipmentStatBlock { Weight = 1, Armor = 4f }
 		},
 		Mods = new()
 	};
@@ -276,7 +276,7 @@ public static class ItemData
 		Equipment = new EquipmentData
 		{
 			Slot = EquipmentSlot.Chest,
-			Stats = new EquipmentStatBlock { Weight = 1, Armor = 40f }
+			Stats = new EquipmentStatBlock { Weight = 1, Armor = 4f }
 		},
 		Mods = new()
 	};
@@ -292,8 +292,8 @@ public static class ItemData
 		Tags = new() { "armor", "leather", "light-armor", "tier1" },
 		Equipment = new EquipmentData
 		{
-			Slot = EquipmentSlot.Head,
-			Stats = new EquipmentStatBlock { Weight = 1, Armor = 40f }
+			Slot = EquipmentSlot.Feet,
+			Stats = new EquipmentStatBlock { Weight = 1, Armor = 4f }
 		},
 		Mods = new()
 	};

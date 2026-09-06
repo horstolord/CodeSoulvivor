@@ -32,6 +32,9 @@ public sealed class SpellTestComponent : Component
 		if ( Input.Keyboard.Pressed( "3" ) ) LoadPreset( "dual_frost_beam" );
 		if ( Input.Keyboard.Pressed( "4" ) ) LoadPreset( "cluster_bomb" );
 		if ( Input.Keyboard.Pressed( "5" ) ) LoadPreset( "raw_force" );
+		if ( Input.Keyboard.Pressed( "7" ) ) LoadPreset( "airball" );
+		if ( Input.Keyboard.Pressed( "8" ) ) LoadPreset( "frostball" );
+		if ( Input.Keyboard.Pressed( "9" ) ) LoadPreset( "earthball" );
 
 		// Cast on 'C' key
 		if ( Input.Keyboard.Pressed( "C" )  )

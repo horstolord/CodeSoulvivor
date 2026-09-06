@@ -56,19 +56,25 @@ public class ProjectileDeliveryMethod : ISpellDeliveryMethod
 		}
 
 		// Clone directly into the scene root (Parent = null) so it moves independently of the Caster
+		// Clone DISABLED — CloneConfig.Transform's rotation isn't reliable through
+// SceneUtility.GetPrefabScene(...).Clone() while the object is already live,
+// so we set it explicitly before waking it up (same pattern as SpawnDirector).
 		var config = new CloneConfig
 		{
 			Transform = spawnTransform,
 			Parent = null,
-			StartEnabled = true
+			StartEnabled = false
 		};
 
 		var projGo = SceneUtility.GetPrefabScene( prefabFile ).Clone( config );
 		projGo.Name = "SpellProjectile";
+		projGo.WorldPosition = ctx.Origin;
+		projGo.WorldRotation = rot;
 
-		// Self-contained prefab (per our convention): motion + Projectile already authored on it —
-		// we just fetch and populate, we don't attach components here.
-		var projComp = projGo.Components.Get<Projectile>( FindMode.EnabledInSelfAndDescendants );
+// NOTE: object is still disabled here — must use EverythingInSelfAndDescendants,
+// not EnabledInSelfAndDescendants, or this returns null (SpawnDirector hits the
+// same requirement for the same reason).
+		var projComp = projGo.Components.Get<Projectile>( FindMode.EverythingInSelfAndDescendants );
 		if ( projComp == null )
 		{
 			Log.Warning( $"[ProjectileDelivery] '{prefabPath}' has no Projectile component — check the prefab." );
@@ -93,13 +99,15 @@ public class ProjectileDeliveryMethod : ISpellDeliveryMethod
 			Caster = ctx.Caster, Damage = damageDef, AttackTags = ctx.AttackTags, SourceContext = ctx
 		};
 
-		// Element identity — the Force rune's material, applied to whatever the Method rune spawned.
 		if ( ctx.VisualMaterial != null )
 		{
-			var renderer = projGo.Components.GetInChildren<ModelRenderer>();
+			var renderer = projGo.Components.GetInChildren<ModelRenderer>( true ); // include disabled
 			if ( renderer != null )
 				renderer.MaterialOverride = ctx.VisualMaterial;
 		}
+
+// Everything is configured — wake it up last.
+		projGo.Enabled = true;
 	}
 }
 
