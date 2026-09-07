@@ -54,9 +54,7 @@
                         var hasFlask = equippedFlask != null;
                         var hasCharges = hasFlask && equippedFlask.RemainingCharges > 0;
 
-                        <div class="hud-flask-card @(hasFlask ? equippedFlask.RarityClass : "empty") @(hasCharges ? "charged" : "depleted")"
-                             onclick="@(() => InventoryState.UseFlask(slot))"
-                             pointer-events="all">
+                        <div class="hud-flask-card @(hasFlask ? equippedFlask.RarityClass : "empty") @(hasCharges ? "charged" : "depleted")">
                             <span class="hud-flask-key">@keyLabel</span>
                             @if ( hasFlask )
                             {
@@ -101,11 +99,13 @@
                             var hasItem = equippedItem != null;
 
                             <div class="equip-slot @(hasItem ? equippedItem.RarityClass : "empty")"
-                                 onmousedown="@(() => InventoryState.EquipSelectedItemTo(equipmentSlot.Slot))">
+                                 onmousedown="@(() => InventoryState.EquipSelectedItemTo(equipmentSlot.Slot))"
+                                 onmouseover="@(() => { if (hasItem) InventoryState.SetHoveredItem(equippedItem); })"
+                                 onmouseout="@(() => { if (hasItem) InventoryState.ClearHoveredItem(equippedItem); })">
                                 @if ( hasItem )
                                 {
                                     <div class="item-icon">@equippedItem.IconGlyph</div>
-                                    <button class="unequip-btn" onclick="@(() => InventoryState.Unequip(equipmentSlot.Slot))">X</button>
+                                    <button class="unequip-btn" onmousedown="@(() => InventoryState.Unequip(equipmentSlot.Slot))">X</button>
                                 }
                                 else
                                 {
@@ -126,15 +126,17 @@
                                 var hasItem = equippedItem != null;
 
                                 <div class="equip-slot @(hasItem ? equippedItem.RarityClass : "empty")"
-                                     onmousedown="@(() => InventoryState.EquipSelectedItemTo(equipmentSlot.Slot))">
+                                     onmousedown="@(() => InventoryState.EquipSelectedItemTo(equipmentSlot.Slot))"
+                                     onmouseover="@(() => { if (hasItem) InventoryState.SetHoveredItem(equippedItem); })"
+                                     onmouseout="@(() => { if (hasItem) InventoryState.ClearHoveredItem(equippedItem); })">
                                     @if ( hasItem )
                                     {
                                         <div class="item-icon">@equippedItem.IconGlyph</div>
-                                        @if ( equippedItem.MaxCharges > 0 )
+                                        @if ( equippedItem.IsFlask && equippedItem.MaxCharges > 0 )
                                         {
                                             <span class="item-quantity">@equippedItem.RemainingCharges/@equippedItem.MaxCharges</span>
                                         }
-                                        <button class="unequip-btn" onclick="@(() => InventoryState.Unequip(equipmentSlot.Slot))">X</button>
+                                        <button class="unequip-btn" onmousedown="@(() => InventoryState.Unequip(equipmentSlot.Slot))">X</button>
                                     }
                                     else
                                     {
@@ -153,11 +155,13 @@
                             var hasItem = equippedItem != null;
 
                             <div class="equip-slot @(hasItem ? equippedItem.RarityClass : "empty")"
-                                 onmousedown="@(() => InventoryState.EquipSelectedItemTo(equipmentSlot.Slot))">
+                                 onmousedown="@(() => InventoryState.EquipSelectedItemTo(equipmentSlot.Slot))"
+                                 onmouseover="@(() => { if (hasItem) InventoryState.SetHoveredItem(equippedItem); })"
+                                 onmouseout="@(() => { if (hasItem) InventoryState.ClearHoveredItem(equippedItem); })">
                                 @if ( hasItem )
                                 {
                                     <div class="item-icon">@equippedItem.IconGlyph</div>
-                                    <button class="unequip-btn" onclick="@(() => InventoryState.Unequip(equipmentSlot.Slot))">X</button>
+                                    <button class="unequip-btn" onmousedown="@(() => InventoryState.Unequip(equipmentSlot.Slot))">X</button>
                                 }
                                 else
                                 {
@@ -198,8 +202,8 @@
                         <div class="inventory-slot @(slot.IsLocked ? "locked" : "") @(slot.Item != null ? slot.Item.RarityClass : "") @(InventoryState.SelectedSlotId == slot.Id ? "selected" : "") @(slotAction != "none" ? "actionable " + slotAction : "")"
                              onmousedown="@(() => InventoryState.OnSlotMouseDown(slot))"
                              onmouseup="@(() => InventoryState.OnSlotMouseUp(slot))"
-                             onmouseover="@(() => InventoryState.SetHoveredItem(slot.Item))"
-                             onmouseout="@(() => InventoryState.SetHoveredItem(null))"
+                             onmouseover="@(() => { if (slot.Item != null) InventoryState.SetHoveredItem(slot.Item); })"
+                             onmouseout="@(() => { if (slot.Item != null) InventoryState.ClearHoveredItem(slot.Item); })"
                              onclick="@(() => {
                                  if ( CanEquip(slot) ) InventoryState.EquipItem(slot);
                                  else if ( slot.Item?.Definition?.IsConsumable == true ) InventoryState.UseConsumable(slot);
@@ -217,7 +221,7 @@
                                     {
                                         <span class="item-quantity">x@slot.Item.Quantity</span>
                                     }
-                                    else if ( slot.Item.MaxCharges > 0 )
+                                    else if ( slot.Item.IsFlask && slot.Item.MaxCharges > 0 )
                                     {
                                         <span class="item-quantity">@slot.Item.RemainingCharges/@slot.Item.MaxCharges</span>
                                     }
@@ -239,46 +243,133 @@
                         </div>
                     }
                 </div>
+            </div>
+        </div>
+    }
 
-                <div class="item-tooltip">
-                    @if ( InventoryState.HoveredItem != null )
-                    {
-                        var item = InventoryState.HoveredItem;
+    @if ( ActivePanel == UiPanel.Inventory && InventoryState.HoveredItem != null )
+    {
+        var item = InventoryState.HoveredItem;
 
-                        <div class="tooltip-header">
-                            <span class="item-name @item.RarityClass">@item.Name</span>
-                            <span class="rarity-badge @item.RarityClass">@item.Rarity</span>
+        <div class="item-popup-window @item.RarityClass" style="left: @(TooltipX)px; top: @(TooltipY)px;">
+            <div class="popup-header">
+                <div class="popup-title @item.RarityClass">@item.Name</div>
+                <div class="popup-badge-row">
+                    <span class="popup-rarity-badge @item.RarityClass">@item.Rarity</span>
+                    <span class="popup-type-badge">@item.ItemTypeLabel</span>
+                </div>
+            </div>
+
+            @if ( !string.IsNullOrWhiteSpace( item.Description ) )
+            {
+                <div class="popup-desc">@item.Description</div>
+            }
+
+            @if ( item.EquipmentStats != null )
+            {
+                var eq = item.EquipmentStats;
+                bool hasAnyStat = eq.BaseDamage > 0 || eq.BaseAttackSpeed > 0 || eq.Armor > 0 || eq.PoiseDamage > 0 || eq.GuardValue > 0 || eq.Weight > 0;
+                @if ( hasAnyStat )
+                {
+                    <div class="popup-section">
+                        <div class="popup-section-title">Base Statistics</div>
+                        <div class="popup-stats-grid">
+                            @if ( eq.BaseDamage > 0 )
+                            {
+                                <div class="popup-stat damage">Damage: <span>@((int)eq.BaseDamage)</span></div>
+                            }
+                            @if ( eq.BaseAttackSpeed > 0 )
+                            {
+                                <div class="popup-stat speed">Speed: <span>@eq.BaseAttackSpeed.ToString("0.0")/s</span></div>
+                            }
+                            @if ( eq.Armor > 0 )
+                            {
+                                <div class="popup-stat armor">Armor: <span>+@((int)eq.Armor)</span></div>
+                            }
+                            @if ( eq.PoiseDamage > 0 )
+                            {
+                                <div class="popup-stat poise">Poise: <span>@((int)eq.PoiseDamage)</span></div>
+                            }
+                            @if ( eq.GuardValue > 0 )
+                            {
+                                <div class="popup-stat guard">Guard: <span>@((int)(eq.GuardValue * 100))%</span></div>
+                            }
+                            @if ( eq.Weight > 0 )
+                            {
+                                <div class="popup-stat weight">Weight: <span>@eq.Weight.ToString("0.#")</span></div>
+                            }
                         </div>
-                        <p class="item-desc">@item.Description</p>
+                    </div>
+                }
+            }
 
-                        @if ( item.MaxCharges > 0 )
+            @if ( item.IsFlask || item.IsPotion || item.Consumable != null )
+            {
+                <div class="popup-section">
+                    <div class="popup-section-title">Consumable Details</div>
+                    @if ( item.IsFlask && item.MaxCharges > 0 )
+                    {
+                        <div class="popup-charge-info">Charges: @item.RemainingCharges / @item.MaxCharges <span class="refill-hint">(Refills on Kill)</span></div>
+                    }
+                    else if ( item.IsPotion )
+                    {
+                        <div class="popup-charge-info">Single use — consumed on drink</div>
+                        @if ( item.Quantity > 1 )
                         {
-                            <div class="tooltip-extra charges-tag">Flask Charges: @item.RemainingCharges / @item.MaxCharges (Refills on Kill)</div>
-                        }
-
-                        @if ( item.Stats.Attack > 0 || item.Stats.Defense > 0 || item.Stats.Speed > 0 )
-                        {
-                            <div class="stats-row">
-                                @if ( item.Stats.Attack > 0 )
-                                {
-                                    <span class="stat-atk">+@item.Stats.Attack ATK</span>
-                                }
-                                @if ( item.Stats.Defense > 0 )
-                                {
-                                    <span class="stat-def">+@item.Stats.Defense DEF</span>
-                                }
-                                @if ( item.Stats.Speed > 0 )
-                                {
-                                    <span class="stat-spd">+@item.Stats.Speed SPD</span>
-                                }
-                            </div>
+                            <div class="popup-charge-info">Stack: x@item.Quantity</div>
                         }
                     }
-                    else
+                    @if ( item.Consumable != null )
                     {
-                        <p class="tooltip-placeholder">Hover over an item to inspect it.</p>
+                        @if ( item.Consumable.RestoreHealth > 0 )
+                        {
+                            <div class="popup-restore health">Restores +@((int)item.Consumable.RestoreHealth) Health</div>
+                        }
+                        @if ( item.Consumable.RestoreEnergy > 0 )
+                        {
+                            <div class="popup-restore mana">Restores +@((int)item.Consumable.RestoreEnergy) Mana</div>
+                        }
+                        @if ( item.Consumable.RestoreStamina > 0 )
+                        {
+                            <div class="popup-restore stamina">Restores +@((int)item.Consumable.RestoreStamina) Stamina</div>
+                        }
+                        @if ( !string.IsNullOrEmpty( item.Consumable.BuffEffect?.DisplayName ) )
+                        {
+                            <div class="popup-buff">Grants Buff: @item.Consumable.BuffEffect.DisplayName (@item.Consumable.BuffEffect.Duration.ToString("0.#")s)</div>
+                        }
                     }
                 </div>
+            }
+
+            @if ( item.Mods != null && item.Mods.Count > 0 )
+            {
+                <div class="popup-section mods-section">
+                    <div class="popup-section-title">Modifiers</div>
+                    <div class="popup-mods-list">
+                        @foreach ( var mod in item.Mods )
+                        {
+                            <div class="popup-mod-item">
+                                <span class="mod-bullet">&#x25C6;</span>
+                                <span class="mod-text">@InventoryItem.FormatMod( mod )</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+            <div class="popup-footer">
+                @if ( item.Definition?.IsEquippable == true )
+                {
+                    <span class="action-hint">[Left Click] Equip to character</span>
+                }
+                else if ( item.Definition?.IsConsumable == true )
+                {
+                    <span class="action-hint use">[Left Click] Consume / Use</span>
+                }
+                else
+                {
+                    <span class="action-hint">[Drag] Move in inventory</span>
+                }
             </div>
         </div>
     }
@@ -307,6 +398,8 @@
     }
 
     private readonly InventoryPanel InventoryState = new();
+    private float TooltipX { get; set; }
+    private float TooltipY { get; set; }
 
     private readonly EquipmentSlotView[] LeftEquipmentSlots =
     {
@@ -364,6 +457,28 @@
             EnergyWidth = EnergyWidth.LerpTo( targetNrg, Time.Delta * lerpSpeed );
         }
 
+        if ( ActivePanel == UiPanel.Inventory && InventoryState.HoveredItem != null )
+        {
+            var mouse = Mouse.Position;
+            float x = mouse.x + 20f;
+            float y = mouse.y + 16f;
+
+            float screenW = Screen.Width > 0 ? Screen.Width : 1920f;
+            float screenH = Screen.Height > 0 ? Screen.Height : 1080f;
+
+            if ( x + 310f > screenW )
+            {
+                x = Math.Max( 10f, mouse.x - 310f );
+            }
+            if ( y + 380f > screenH )
+            {
+                y = Math.Max( 10f, screenH - 390f );
+            }
+
+            TooltipX = x;
+            TooltipY = y;
+        }
+
         if ( Input.Pressed( "Inventory" ) )
         {
             TogglePanel( UiPanel.Inventory );
@@ -377,12 +492,23 @@
         if ( Input.EscapePressed && ActivePanel != UiPanel.None )
         {
             ActivePanel = UiPanel.None;
+            InventoryState.ClearHoveredItem( InventoryState.HoveredItem );
         }
+
+        // FPS look needs a locked cursor. Any pointer-events:all panel with Auto/Visible
+        // zeroes Input.AnalogLook — so only free the mouse while a menu is open.
+        Mouse.Visibility = ActivePanel == UiPanel.None
+            ? MouseVisibility.Hidden
+            : MouseVisibility.Visible;
     }
 
     void TogglePanel( UiPanel panel )
     {
         ActivePanel = ActivePanel == panel ? UiPanel.None : panel;
+        if ( ActivePanel == UiPanel.None )
+        {
+            InventoryState.ClearHoveredItem( InventoryState.HoveredItem );
+        }
     }
 
     bool CanEquip( InventorySlot slot )
@@ -397,7 +523,9 @@
             return HashCode.Combine(
                 false,
                 ActivePanel,
-                InventoryState.Revision
+                InventoryState.Revision,
+                TooltipX,
+                TooltipY
             );
         }
 
@@ -407,8 +535,7 @@
             StaminaWidth,
             EnergyWidth,
             stats.CurrentHealth,
-            stats.CurrentStamina,
-            stats.CurrentEnergy
+            HashCode.Combine( stats.CurrentStamina, stats.CurrentEnergy, TooltipX, TooltipY )
         );
     }
 
@@ -514,6 +641,7 @@
     position: absolute;
     inset: 0;
     background: rgba(0, 0, 0, 0.42);
+    pointer-events: all;
 }
 
 .inventory-screen {
@@ -524,7 +652,7 @@
     align-items: center;
     gap: 24px;
     padding: 32px;
-    pointer-events: all;
+    pointer-events: none;
 }
 
 .equipment-root,
@@ -535,6 +663,7 @@
     border-radius: 6px;
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.75);
     color: #dfd5c6;
+    pointer-events: all;
 }
 
 .equipment-root {
@@ -674,19 +803,31 @@
 }
 
 .inventory-grid {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 6px;
-	padding: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px;
 }
 
 .inventory-slot {
-	width: 56px;
-	height: 64px;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	position: relative;
+    width: 56px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+/* Inner elements never intercept pointer events to prevent hover flicker */
+.item-container,
+.item-icon,
+.ghost-icon,
+.slot-label,
+.item-quantity,
+.slot-action-hint,
+.slot-lock,
+.empty-dot {
+    pointer-events: none;
 }
 
 .item-container {
@@ -737,7 +878,6 @@
     padding: 2px 0;
     border-radius: 0 0 5px 5px;
     opacity: 0;
-    pointer-events: none;
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
@@ -767,6 +907,7 @@
     width: 18px;
     height: 18px;
     padding: 0;
+    pointer-events: all;
 }
 
 .empty-dot {
@@ -810,15 +951,12 @@
     text-transform: uppercase;
 }
 
-.stats-grid,
-.stats-row {
+.stats-grid {
     display: flex;
     gap: 8px;
 }
 
-.stat-box,
-.rarity-badge,
-.stats-row span {
+.stat-box {
     padding: 6px 8px;
     border-radius: 4px;
     background: rgba(28, 24, 20, 0.9);
@@ -826,37 +964,273 @@
     font-size: 12px;
 }
 
-.item-tooltip {
-    margin-top: auto;
-    padding: 12px;
-    border: 1px solid #5f4c38;
-    border-radius: 5px;
-    background: rgba(22, 19, 16, 0.98);
+/* Floating Pop-up Tooltip Card */
+.item-popup-window {
+    position: absolute;
+    width: 290px;
+    background: rgba(14, 12, 10, 0.98);
+    border: 2px solid #6b5a45;
+    border-radius: 6px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.92), 0 0 16px rgba(0, 0, 0, 0.6);
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+    z-index: 1000;
 }
 
-.tooltip-header {
+.item-popup-window.common {
+    border-color: #7a7266;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.92), 0 0 12px rgba(120, 110, 100, 0.25);
+}
+
+.item-popup-window.magic {
+    border-color: #3f8dc5;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.92), 0 0 16px rgba(63, 141, 197, 0.4);
+}
+
+.item-popup-window.rare {
+    border-color: #d4af37;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.92), 0 0 18px rgba(212, 175, 55, 0.45);
+}
+
+.item-popup-window.epic {
+    border-color: #9d5fe8;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.92), 0 0 20px rgba(157, 95, 232, 0.45);
+}
+
+.item-popup-window.legendary,
+.item-popup-window.mythical,
+.item-popup-window.divine {
+    border-color: #e67e22;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.92), 0 0 22px rgba(230, 126, 34, 0.5);
+}
+
+.popup-header {
     display: flex;
-    justify-content: space-between;
-    gap: 12px;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.popup-title {
+    font-size: 16px;
+    font-weight: bold;
+    letter-spacing: 0.8px;
+    color: #f1e6d2;
+    text-shadow: 1px 1px 2px black;
+}
+
+.popup-title.magic {
+    color: #7dc4ff;
+}
+
+.popup-title.rare {
+    color: #ffd700;
+}
+
+.popup-title.epic {
+    color: #c996ff;
+}
+
+.popup-title.legendary,
+.popup-title.mythical,
+.popup-title.divine {
+    color: #ff9944;
+}
+
+.popup-badge-row {
+    display: flex;
+    gap: 6px;
     align-items: center;
 }
 
-.item-name {
+.popup-rarity-badge {
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 10px;
     font-weight: bold;
-    color: #f1e6d2;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: 1px solid #574636;
+    background: rgba(30, 26, 22, 0.9);
 }
 
-.item-desc {
-    margin: 8px 0 0;
-    color: #c5b7a4;
-    font-size: 13px;
+.popup-rarity-badge.common {
+    color: #a8a095;
+    border-color: #70685c;
 }
 
-.charges-tag {
-    margin-top: 6px;
-    font-size: 11px;
-    color: #62b1d0;
+.popup-rarity-badge.magic {
+    color: #7dc4ff;
+    border-color: #3f8dc5;
+    background: rgba(20, 45, 70, 0.6);
+}
+
+.popup-rarity-badge.rare {
+    color: #ffd700;
+    border-color: #d4af37;
+    background: rgba(60, 50, 20, 0.6);
+}
+
+.popup-rarity-badge.epic {
+    color: #c996ff;
+    border-color: #9d5fe8;
+    background: rgba(50, 25, 75, 0.6);
+}
+
+.popup-rarity-badge.legendary,
+.popup-rarity-badge.mythical,
+.popup-rarity-badge.divine {
+    color: #ffaa55;
+    border-color: #e67e22;
+    background: rgba(70, 35, 15, 0.6);
+}
+
+.popup-type-badge {
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 10px;
+    color: #a99b89;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(120, 100, 75, 0.35);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.popup-desc {
+    color: #beb09e;
+    font-size: 12px;
+    line-height: 1.35;
     font-style: italic;
+    border-top: 1px solid rgba(120, 95, 68, 0.25);
+    padding-top: 6px;
+}
+
+.popup-section {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    border-top: 1px solid rgba(120, 95, 68, 0.35);
+    padding-top: 8px;
+}
+
+.popup-section-title {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #8f8170;
+    font-weight: bold;
+}
+
+.popup-stats-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.popup-stat {
+    font-size: 11px;
+    color: #beb09e;
+    background: rgba(28, 24, 20, 0.85);
+    border: 1px solid #4a3e31;
+    border-radius: 3px;
+    padding: 3px 6px;
+}
+
+.popup-stat span {
+    color: #f1e6d2;
+    font-weight: bold;
+}
+
+.popup-stat.damage span {
+    color: #ff7766;
+}
+
+.popup-stat.armor span {
+    color: #77b5fe;
+}
+
+.popup-stat.speed span {
+    color: #77e688;
+}
+
+.popup-charge-info {
+    font-size: 12px;
+    color: #62b1d0;
+    font-weight: 600;
+}
+
+.refill-hint {
+    font-size: 10px;
+    color: #8da4af;
+    font-style: italic;
+    font-weight: normal;
+}
+
+.popup-restore {
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.popup-restore.health {
+    color: #e06060;
+}
+
+.popup-restore.mana {
+    color: #60a5fa;
+}
+
+.popup-restore.stamina {
+    color: #4ade80;
+}
+
+.popup-buff {
+    font-size: 11px;
+    color: #f6c065;
+    font-style: italic;
+}
+
+.popup-mods-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.popup-mod-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+}
+
+.mod-bullet {
+    font-size: 8px;
+    color: #4da7db;
+}
+
+.mod-text {
+    font-weight: 600;
+    color: #8ad2ff;
+    letter-spacing: 0.3px;
+}
+
+.popup-footer {
+    border-top: 1px solid rgba(120, 95, 68, 0.35);
+    padding-top: 6px;
+    margin-top: 2px;
+}
+
+.action-hint {
+    font-size: 10px;
+    color: #c9a66b;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.action-hint.use {
+    color: #4ade80;
 }
 
 .test-panel {
@@ -867,7 +1241,6 @@
     width: 720px;
     min-height: 420px;
     padding: 24px;
-    pointer-events: all;
 }
 
 .skills-panel {

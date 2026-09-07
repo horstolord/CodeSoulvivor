@@ -227,7 +227,10 @@ public class Actor : Component
 	private void Regenerate( float dt )
 	{
 		StatSheet.CurrentHealth  = MathF.Min( StatSheet.CurrentHealth  + StatSheet.HealthRegen.Value  * dt, StatSheet.MaxHealth.Value );
-		StatSheet.CurrentStamina = MathF.Min( StatSheet.CurrentStamina + StatSheet.StaminaRegen.Value * dt, StatSheet.MaxStamina.Value );
+		if ( ShouldRegenerateStamina )
+			StatSheet.CurrentStamina = MathF.Min( StatSheet.CurrentStamina + StatSheet.StaminaRegen.Value * dt, StatSheet.MaxStamina.Value );
 		StatSheet.CurrentEnergy  = MathF.Min( StatSheet.CurrentEnergy  + StatSheet.EnergyRegen.Value  * dt, StatSheet.MaxEnergy.Value );
 	}
+
+	protected virtual bool ShouldRegenerateStamina => true;
 }

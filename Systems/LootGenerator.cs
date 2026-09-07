@@ -45,10 +45,14 @@ public static class LootGenerator
 
 		var rarity = RollRarity( mobValue );
 		var affixes = RollAffixes( baseItem, rarity, sourceLevel );
+		int charges = baseItem.Consumable?.Charges ?? 0;
 
 		return new ItemInstance
 		{
 			Definition = baseItem,
+			StackCount = 1,
+			RemainingCharges = charges,
+			MaxCharges = charges,
 			RolledMods = affixes
 		};
 	}

@@ -57,8 +57,18 @@ public sealed class InventoryPanel
 
     public void SetHoveredItem( InventoryItem item )
     {
+        if ( HoveredItem == item ) return;
         HoveredItem = item;
         Revision++;
+    }
+
+    public void ClearHoveredItem( InventoryItem item )
+    {
+        if ( HoveredItem == item )
+        {
+            HoveredItem = null;
+            Revision++;
+        }
     }
 
     public void SwapSlots( int fromId, int toId )
@@ -123,6 +133,8 @@ public sealed class InventoryPanel
         var normalized = NormalizeSlot( slot );
         if ( !EquippedSlots.TryGetValue( normalized, out var flaskItem ) || flaskItem == null ) return false;
 
+        EnsureFlaskCharges( flaskItem );
+
         if ( flaskItem.RemainingCharges <= 0 )
         {
             Log.Info( $"[Flask] {flaskItem.Name} has no remaining charges!" );
@@ -133,6 +145,8 @@ public sealed class InventoryPanel
         if ( player == null ) return false;
 
         flaskItem.RemainingCharges--;
+        if ( flaskItem.Instance != null )
+            flaskItem.Instance.RemainingCharges = flaskItem.RemainingCharges;
         player.ApplyFlaskEffect( flaskItem.Definition );
         Revision++;
         Log.Info( $"[Flask] Used {flaskItem.Name}. Charges left: {flaskItem.RemainingCharges}/{flaskItem.MaxCharges}" );
@@ -144,11 +158,14 @@ public sealed class InventoryPanel
         int refilledCount = 0;
         foreach ( var slot in new[] { EquipmentSlot.Flask1, EquipmentSlot.Flask2 } )
         {
-            if ( EquippedSlots.TryGetValue( slot, out var flask ) && flask != null && flask.MaxCharges > 0 )
+            if ( EquippedSlots.TryGetValue( slot, out var flask ) && flask != null && flask.IsFlask )
             {
-                if ( flask.RemainingCharges < flask.MaxCharges )
+                EnsureFlaskCharges( flask );
+                if ( flask.MaxCharges > 0 && flask.RemainingCharges < flask.MaxCharges )
                 {
                     flask.RemainingCharges = System.Math.Min( flask.MaxCharges, flask.RemainingCharges + amount );
+                    if ( flask.Instance != null )
+                        flask.Instance.RemainingCharges = flask.RemainingCharges;
                     refilledCount++;
                 }
             }
@@ -157,11 +174,14 @@ public sealed class InventoryPanel
         // Also refill any flasks sitting in inventory grid
         foreach ( var slot in Slots )
         {
-            if ( slot.Item != null && slot.Item.MaxCharges > 0 && (slot.Item.Definition.Tags.Contains("flask") || slot.Item.Definition.Equipment?.Slot is EquipmentSlot.Flask1 or EquipmentSlot.Flask2) )
+            if ( slot.Item != null && slot.Item.IsFlask )
             {
-                if ( slot.Item.RemainingCharges < slot.Item.MaxCharges )
+                EnsureFlaskCharges( slot.Item );
+                if ( slot.Item.MaxCharges > 0 && slot.Item.RemainingCharges < slot.Item.MaxCharges )
                 {
                     slot.Item.RemainingCharges = System.Math.Min( slot.Item.MaxCharges, slot.Item.RemainingCharges + amount );
+                    if ( slot.Item.Instance != null )
+                        slot.Item.Instance.RemainingCharges = slot.Item.RemainingCharges;
                     refilledCount++;
                 }
             }
@@ -174,20 +194,100 @@ public sealed class InventoryPanel
         }
     }
 
+    /// <summary>
+    /// Repairs flasks that were created without MaxCharges (old loot path left them at 0).
+    /// </summary>
+    private static void EnsureFlaskCharges( InventoryItem item )
+    {
+        if ( item == null || !item.IsFlask ) return;
+
+        int defCharges = item.Definition?.Consumable?.Charges ?? 0;
+        if ( defCharges <= 0 || item.MaxCharges > 0 ) return;
+
+        item.MaxCharges = defCharges;
+        item.RemainingCharges = defCharges;
+        if ( item.Instance != null )
+        {
+            item.Instance.MaxCharges = defCharges;
+            item.Instance.RemainingCharges = defCharges;
+        }
+    }
+
     public bool AddItem( ItemInstance instance )
     {
-        if ( instance == null ) return false;
+        if ( instance?.Definition == null ) return false;
 
-        var slot = Slots.FirstOrDefault( s => s.Item == null && !s.IsLocked );
-        if ( slot == null ) return false;
+        var def = instance.Definition;
+        int remaining = System.Math.Max( 1, instance.StackCount );
+        int starting = remaining;
 
-        slot.Item = InventoryItem.FromInstance( instance, instance.StackCount );
-        Revision++;
-        return true;
+        if ( def.Stackable )
+        {
+            int maxStack = System.Math.Max( 1, def.MaxStack );
+            foreach ( var slot in Slots )
+            {
+                if ( remaining <= 0 ) break;
+                if ( slot.IsLocked || slot.Item == null ) continue;
+                if ( slot.Item.Definition?.Id != def.Id ) continue;
+
+                int space = maxStack - slot.Item.Quantity;
+                if ( space <= 0 ) continue;
+
+                int take = System.Math.Min( space, remaining );
+                slot.Item.Quantity += take;
+                if ( slot.Item.Instance != null )
+                    slot.Item.Instance.StackCount = slot.Item.Quantity;
+                remaining -= take;
+            }
+        }
+
+        bool usedOriginalInstance = false;
+        while ( remaining > 0 )
+        {
+            var empty = Slots.FirstOrDefault( s => s.Item == null && !s.IsLocked );
+            if ( empty == null ) break;
+
+            int place = def.Stackable
+                ? System.Math.Min( remaining, System.Math.Max( 1, def.MaxStack ) )
+                : 1;
+
+            ItemInstance placed;
+            if ( !usedOriginalInstance )
+            {
+                placed = instance;
+                usedOriginalInstance = true;
+            }
+            else
+            {
+                placed = ItemInstance.FromDefinition( def, place );
+                if ( instance.MaxCharges > 0 )
+                {
+                    placed.MaxCharges = instance.MaxCharges;
+                    placed.RemainingCharges = instance.RemainingCharges;
+                }
+            }
+
+            placed.StackCount = place;
+            empty.Item = InventoryItem.FromInstance( placed, place );
+            remaining -= place;
+
+            if ( !def.Stackable )
+                break;
+        }
+
+        bool fullyAdded = remaining <= 0;
+        if ( !fullyAdded )
+            instance.StackCount = remaining;
+
+        if ( remaining < starting )
+            Revision++;
+
+        return fullyAdded;
     }
 
     public void Unequip( EquipmentSlot equipmentSlot )
     {
+        SelectedSlotId = null;
         var normalizedSlot = NormalizeSlot( equipmentSlot );
         if ( !EquippedSlots.TryGetValue( normalizedSlot, out var item ) ) return;
 
@@ -229,7 +329,6 @@ public sealed class InventoryPanel
         draggingSlotId = null;
         Revision++;
     }
-
 
     private void InitializeGrid()
     {
@@ -293,6 +392,80 @@ public sealed class InventoryItem
     public InventoryItemStats Stats { get; init; } = new();
     public string IconGlyph { get; init; } = "?";
 
+    public IReadOnlyList<ModData> Mods => (Instance?.RolledMods != null && Instance.RolledMods.Count > 0)
+        ? Instance.RolledMods
+        : (Definition?.Mods ?? (IReadOnlyList<ModData>)System.Array.Empty<ModData>());
+
+    public EquipmentStatBlock EquipmentStats => Definition?.Equipment?.Stats;
+    public ConsumableData Consumable => Definition?.Consumable;
+    public EquipmentSlot Slot => Definition?.Equipment?.Slot ?? EquipmentSlot.None;
+    public string ItemTypeLabel => GetItemTypeLabel( Definition );
+    public bool IsFlask => IsFlaskDefinition( Definition );
+    public bool IsPotion => Definition?.Tags?.Contains( "potion" ) == true;
+
+    public static bool IsFlaskDefinition( ItemDef definition )
+    {
+        if ( definition == null ) return false;
+        if ( definition.Tags?.Contains( "flask" ) == true ) return true;
+        return definition.Equipment?.Slot is EquipmentSlot.Flask1 or EquipmentSlot.Flask2;
+    }
+
+    public static string FormatMod( ModData mod )
+    {
+        if ( mod == null ) return string.Empty;
+        string name = FormatStatName( mod.StatName );
+        string sign = mod.Value >= 0 ? "+" : "";
+        string valStr = mod.Type == ModifierType.Percent ? $"{sign}{mod.Value:0.#}%" : $"{sign}{mod.Value:0.#}";
+        return $"{valStr} {name}";
+    }
+
+    public static string FormatStatName( string statName )
+    {
+        return statName switch
+        {
+            "MaxHealth" => "Max Health",
+            "MaxStamina" => "Max Stamina",
+            "MaxEnergy" => "Max Mana",
+            "AttackSpeed" => "Attack Speed",
+            "PhysicalDamage" => "Physical Damage",
+            "MagicDamage" => "Magic Damage",
+            "FireDamage" => "Fire Damage",
+            "LightningDamage" => "Lightning Damage",
+            "CritChance" => "Critical Chance",
+            "CritDamage" => "Critical Multiplier",
+            _ => statName
+        };
+    }
+
+    public static string GetItemTypeLabel( ItemDef def )
+    {
+        if ( def == null ) return "Item";
+        if ( def.Equipment != null && def.Equipment.Slot != EquipmentSlot.None )
+        {
+            return def.Equipment.Slot switch
+            {
+                EquipmentSlot.MainHand1 or EquipmentSlot.MainHand2 or EquipmentSlot.MainHand3 => "Main Hand Weapon",
+                EquipmentSlot.OffHand1 or EquipmentSlot.OffHand2 or EquipmentSlot.OffHand3 => "Off Hand / Shield",
+                EquipmentSlot.Head => "Head Armor",
+                EquipmentSlot.Chest => "Chest Armor",
+                EquipmentSlot.Hands => "Gloves / Hands",
+                EquipmentSlot.Belt => "Belt / Waist",
+                EquipmentSlot.Feet => "Boots / Feet",
+                EquipmentSlot.Amulet => "Amulet",
+                EquipmentSlot.Ring1 or EquipmentSlot.Ring2 => "Ring",
+                EquipmentSlot.Flask1 or EquipmentSlot.Flask2 => "Flask",
+                _ => "Equipment"
+            };
+        }
+        return def.Category switch
+        {
+            ItemCategory.Consumable => def.Tags?.Contains( "potion" ) == true ? "Potion" : "Consumable",
+            ItemCategory.Material => "Crafting Material",
+            ItemCategory.KeyItem => "Key Item",
+            _ => "Item"
+        };
+    }
+
     public static InventoryItem FromDefinition( ItemDef definition, int quantity = 1 )
     {
         var instance = ItemInstance.FromDefinition( definition, quantity );
@@ -303,8 +476,20 @@ public sealed class InventoryItem
     {
         var definition = instance?.Definition;
         var stats = definition?.Equipment?.Stats;
-        int charges = instance != null ? instance.RemainingCharges : (definition?.Consumable?.Charges ?? 0);
-        int maxCharges = instance != null ? instance.MaxCharges : (definition?.Consumable?.Charges ?? 0);
+        int defCharges = definition?.Consumable?.Charges ?? 0;
+
+        // Loot used to spawn instances with MaxCharges left at 0 — fall back to the def.
+        int maxCharges = instance != null && instance.MaxCharges > 0 ? instance.MaxCharges : defCharges;
+        int charges = instance != null && instance.MaxCharges > 0
+            ? instance.RemainingCharges
+            : (instance != null && instance.RemainingCharges > 0 ? instance.RemainingCharges : defCharges);
+
+        if ( instance != null && maxCharges > 0 && instance.MaxCharges <= 0 )
+        {
+            instance.MaxCharges = maxCharges;
+            instance.RemainingCharges = charges;
+        }
+
         var mods = instance?.RolledMods ?? definition?.Mods;
 
         return new InventoryItem
