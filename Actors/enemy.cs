@@ -14,23 +14,42 @@ public sealed class Enemy : Actor
 	protected override string GetMobPresetId() => PresetOverride;
 
 	[Property] public GameObject Target { get; set; }
-	[Property] public float AttackRange { get; set; } = 80f;
-	[Property] public float StopRange { get; set; } = 50f; // Prevent running directly inside the player
 	[Property] public AttackDef AttackType { get; set; } // The attack type this enemy uses
+
+	/// <summary>
+	/// Navmesh-aware velocity solver only — UpdatePosition is off, so it never moves the
+	/// GameObject itself. CharacterController stays the sole position authority so that
+	/// Punch()-based knockback (CombatMath.ApplyKnockback, ProjComp.OnHit) keeps working
+	/// exactly as before. Behaviors call Agent.MoveTo()/Stop(); Enemy bridges the result
+	/// into the controller each tick.
+	/// </summary>
+	public NavMeshAgent Agent { get; private set; }
+
 	private CharacterController _controller;
+	private IEnemyBehavior _behavior;
 	private Vector3 _knockbackVelocity;
+
 	protected override void OnStart()
 	{
 		base.OnStart();
 		// Fetch standard components
 		_controller = Components.Get<CharacterController>();
 		Combat = Components.Get<CombatComponent>();
+
+		Agent = Components.GetOrCreate<NavMeshAgent>();
+		Agent.UpdatePosition = false; // CharacterController drives position, see field comment
+		Agent.UpdateRotation = false; // Enemy.FaceTarget() handles facing
+		Agent.Acceleration = MathF.Max( Agent.Acceleration, 1000f ); // snappy — Facepunch recommends accel >= max speed
+
+		_behavior = Components.Get<IEnemyBehavior>();
+		if ( _behavior == null )
+			Log.Warning( $"[Enemy] {GameObject.Name} has no IEnemyBehavior component attached — it will stand still." );
+
 		// Fallback target find
 		if ( Target == null )
 		{
 			FindPlayerTarget();
 		}
-		
 	}
 	protected override void OnUpdate()
 	{
@@ -40,56 +59,73 @@ public sealed class Enemy : Actor
 			FindPlayerTarget();
 			return;
 		}
-
 	}
 	protected override void OnFixedUpdate()
 	{
-		if ( Target == null ) return;
-		// Calculate direction and distance to player
-		Vector3 targetPos = Target.WorldPosition;
-		Vector3 diff = targetPos - GameObject.WorldPosition;
-		float distance = diff.Length;
-		Vector3 direction = diff.WithZ( 0 ).Normal;
-		// Rotate towards the target player
-		if ( direction.LengthSquared > 0.01f )
+		if ( Target == null || Agent == null ) return;
+
+		Agent.MaxSpeed = StatSheet?.MoveSpeed?.Value ?? 120f;
+
+		// Don't let AI reposition mid-swing — CombatComponent already tracks per-attack
+		// CanMoveDuringStartup/Recovery, this just wasn't being read before.
+		if ( IsMovementLocked() )
 		{
-			GameObject.WorldRotation = Rotation.LookAt( direction, Vector3.Up );
+			Agent.Stop();
+			if ( _controller != null ) _controller.Velocity = Vector3.Zero;
+			return;
 		}
-		Vector3 wishVelocity = Vector3.Zero;
-		// Move towards the player if they are beyond the stop range
-		if ( distance > StopRange )
-		{
-			// Pull speed from the StatSheet (default to 120)
-			float speed = StatSheet?.MoveSpeed?.Value ?? 120f;
-			wishVelocity = direction * speed;
-		}
-		// Move using S&box's CharacterController
+
+		_behavior?.Tick( this, Time.Delta );
+
 		if ( _controller != null )
 		{
-			_controller.Velocity = wishVelocity ;
+			_controller.Velocity = Agent.Velocity;
 		}
 		else
 		{
 			// Fallback direct movement in case CharacterController is missing
-			GameObject.WorldPosition += (wishVelocity + _knockbackVelocity) * Time.Delta;
-		}
-		// Attack when in range and CombatComponent says we can (accounts for startup, recovery, and cooldown).
-		if ( distance <= AttackRange && Combat != null && Combat.CanAttack )
-		{
-			TryPerformAttack( GetAttackType() );
+			GameObject.WorldPosition += (Agent.Velocity + _knockbackVelocity) * Time.Delta;
 		}
 	}
-	private void FindPlayerTarget()
+
+	/// <summary>
+	/// Rotates to face the target regardless of movement direction. Melee wants this
+	/// (movement direction ≈ target direction anyway), ranged needs it explicitly since
+	/// it can be retreating while still wanting to aim at the target.
+	/// </summary>
+	public void FaceTarget()
 	{
-		var player = Scene.GetAllComponents<Player>().FirstOrDefault();
-		if ( player != null )
-		{
-			Target = player.GameObject;
-		}
+		if ( Target == null ) return;
+		var direction = (Target.WorldPosition - GameObject.WorldPosition).WithZ( 0 ).Normal;
+		if ( direction.LengthSquared > 0.01f )
+			GameObject.WorldRotation = Rotation.LookAt( direction, Vector3.Up );
 	}
-	private void TryPerformAttack( AttackDef attack )
+
+	public float DistanceToTarget => Target == null
+		? float.MaxValue
+		: (Target.WorldPosition - GameObject.WorldPosition).Length;
+
+	/// <summary>Simple ray check so ranged behaviors don't fire through walls.</summary>
+	public bool HasLineOfSight()
 	{
-		if ( Combat == null || attack == null ) return;
+		if ( Target == null ) return false;
+		var tr = Scene.Trace
+			.Ray( GameObject.WorldPosition + Vector3.Up * 40f, Target.WorldPosition + Vector3.Up * 40f )
+			.IgnoreGameObjectHierarchy( GameObject )
+			.Run();
+		return !tr.Hit || tr.GameObject == Target;
+	}
+
+	public AttackDef GetAttackType()
+	{
+		return IsConfiguredAttack( AttackType ) ? AttackType : AttackData.Punch;
+	}
+
+	/// <summary>Called by IEnemyBehavior implementations. Was private TryPerformAttack — made
+	/// public and moved the attack-def fallback out so behaviors don't need to know about it.</summary>
+	public bool TryAttack( AttackDef attack )
+	{
+		if ( Combat == null || attack == null ) return false;
 		var facing = GameObject.WorldRotation;
 		var request = new AttackRequest
 		{
@@ -108,16 +144,26 @@ public sealed class Enemy : Actor
 		{
 			// Cooldown is now fully managed by CombatComponent — no manual timer needed.
 			var bodyRenderer = Components.GetInChildren<SkinnedModelRenderer>();
-			if ( bodyRenderer != null )
-			{
-				bodyRenderer.Set( "b_attack", true );
-			}
+			bodyRenderer?.Set( "b_attack", true );
+			return true;
 		}
+		return false;
 	}
 
-	private AttackDef GetAttackType()
+	private bool IsMovementLocked()
 	{
-		return IsConfiguredAttack( AttackType ) ? AttackType : AttackData.Punch;
+		var atk = Combat?.CurrentAttack;
+		if ( atk == null ) return false;
+		return !atk.CanMoveDuringStartup && !atk.CanMoveDuringRecovery;
+	}
+
+	private void FindPlayerTarget()
+	{
+		var player = Scene.GetAllComponents<Player>().FirstOrDefault();
+		if ( player != null )
+		{
+			Target = player.GameObject;
+		}
 	}
 
 	private static bool IsConfiguredAttack( AttackDef attack )
@@ -129,7 +175,9 @@ public sealed class Enemy : Actor
 	}
 
 	/// <summary>
-	/// Custom knockback receiver. Call this when the enemy takes a hit.
+	/// Custom knockback receiver. 
+	/// for a manually-applied (non-Punch) knockback path.
+	/// s&box physics handle knockback for now
 	/// </summary>
 	public void ReceiveKnockback( Vector3 attackerPosition, float force )
 	{

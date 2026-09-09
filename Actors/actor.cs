@@ -22,6 +22,18 @@ public class Actor : Component
 	public CombatComponent Combat;
 	public EquipmentControl Equipment { get; private set; }
 	public BuffComponent Buffs { get; private set; }
+	/// <summary>
+	/// Raised the frame the actor dies (before any destruction/drops).
+	/// Components can subscribe to react to death — e.g. <see cref="Sandbox.Code.Systems.PlayerRespawnManager"/>.
+	/// </summary>
+	public event Action OnDeath;
+
+	/// <summary>
+	/// Whether the GameObject should be destroyed shortly after death. The player overrides this
+	/// to false so it can be kept alive and respawned (teleported) instead.
+	/// </summary>
+	protected virtual bool ShouldDestroyOnDeath => true;
+
 	// Cache the preset data so OnKilled can reference it without a dict lookup
 	private MobData _mobData;
 	public ActorStateComp StateComp { get; private set; }
@@ -171,6 +183,8 @@ public class Actor : Component
 	{
 		StateComp.CurrentState = ActorStateType.Dead;
 		Log.Info( $"{GameObject.Name} killed." );
+		OnDeath?.Invoke();
+
 		var aicomponent = GameObject.Components.GetInAncestorsOrSelf<Enemy>();
 		if ( aicomponent != null )
 		{
@@ -179,9 +193,20 @@ public class Actor : Component
 		}
 		await Task.DelaySeconds(2.0f);
 		if (!this.IsValid()) return;
-		GameObject.Destroy();
-		SpawnSoulOrb();
-		SpawnLootDrop();
+
+		if ( ShouldDestroyOnDeath )
+		{
+			GameObject.Destroy();
+			SpawnSoulOrb();
+			SpawnLootDrop();
+		}
+		else
+		{
+			// Player death: keep the object alive — a respawn component will
+			// teleport it back and restore it. Souls are still dropped here.
+			SpawnSoulOrb();
+			SpawnLootDrop();
+		}
 	}
 
 	private void SpawnSoulOrb()

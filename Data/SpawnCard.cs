@@ -7,6 +7,12 @@ public class SpawnCard
 {
 	/// <summary>Key into MobRegistry — also set as Enemy.PresetOverride on spawn.</summary>
 	public string MobPresetId   { get; set; }
+	/// <summary>
+	/// Resource path to this archetype's prefab (e.g. "goblin_ranged.prefab"), resolved via
+	/// ResourceLibrary.TryGet. Static data can't hold an
+	/// Editor-dragged GameObject reference(I think), which is why this is a path, not a GameObject.
+	/// </summary>
+	public string PrefabPath    { get; set; }
 	/// <summary>Director credit cost to spawn one of these.</summary>
 	public float  Cost          { get; set; }
 	/// <summary>Relative probability weight vs. other affordable cards.</summary>
@@ -27,6 +33,7 @@ public static class SpawnCardRegistry
 		new SpawnCard
 		{
 			MobPresetId   = "goblin",
+			PrefabPath    = "goblin.prefab",
 			DisplayName   = "Goblin Scout",
 			Cost          = 10f,
 			Weight        = 3f,
@@ -35,10 +42,24 @@ public static class SpawnCardRegistry
 		new SpawnCard
 		{
 			MobPresetId   = "orc",
+			PrefabPath    = "orc.prefab",
 			DisplayName   = "Orc Berserker",
 			Cost          = 15f,
 			Weight        = 3f,
-			MinDifficulty = 0f,  // unlocks ~5 minutes in
+			MinDifficulty = 0f,  // 
+		},
+		// Example new archetype. Swap PrefabPath for your real ranged prefab
+		// (Enemy + NavMeshAgent + CharacterController + CombatComponent with ArrowPrefab
+		// set + RangedKiteBehavior attached). Reusing goblin stats until you add a
+		// dedicated MobRegistry entry — cheap to change, just a string.
+		new SpawnCard
+		{
+			MobPresetId   = "goblin",
+			PrefabPath    = "goblin_ranged.prefab",
+			DisplayName   = "Goblin Slinger",
+			Cost          = 12f,
+			Weight        = 2f,
+			MinDifficulty = 0f,
 		},
 	};
 }

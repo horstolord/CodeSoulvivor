@@ -10,13 +10,13 @@ namespace Sandbox.Code.Systems;
 /// Accumulates credits over time and spends them on affordable SpawnCards,
 /// spawning enemies at a random point on a ring around the player.
 ///
-/// Place exactly one of these anywhere in the scene.
-/// Drag the shared Enemy prefab into EnemyPrefab.
+/// Place exactly one of these anywhere in the scene. As of the multi-archetype
+/// AI pass, each SpawnCard carries its own PrefabPath — there is no longer a
+/// single shared EnemyPrefab field to wire up in the Inspector.
 /// </summary>
 public class SpawnDirector : Component
 {
 	// ============ TUNING ============
-	[Property] public GameObject EnemyPrefab     { get; set; }
 	/// <summary>Base credits earned per second at difficulty 1.0.</summary>
 	[Property] public float BaseCreditRate   { get; set; } = 2f;
 
@@ -35,12 +35,6 @@ public class SpawnDirector : Component
 	/// <summary>Additional enemies allowed per minute of play time.</summary>
 	[Property] public float CapGrowthPerMin  { get; set; } = 2f;
 
-	/// <summary>Base level for spawned enemies at minute 0.</summary>
-	[Property] public int   BaseEnemyLevel   { get; set; } = 1;
-
-	/// <summary>Levels gained by spawned enemies per minute of elapsed play time.</summary>
-	[Property] public float LevelGrowthPerMin { get; set; } = 1f;
-
 	// ============ RUNTIME ============
 	private float _credits       = 0f;
 	private float _elapsed       = 0f;   // total seconds since start
@@ -54,9 +48,6 @@ public class SpawnDirector : Component
 
 	/// <summary>Live enemy cap, grows with time.</summary>
 	public int EnemyCap => BaseEnemyCap + (int)(_elapsed / 60f * CapGrowthPerMin);
-
-	/// <summary>Live enemy base level, increases every minute.</summary>
-	public int CurrentEnemyLevel => Math.Clamp( BaseEnemyLevel + (int)(_elapsed / 60f * LevelGrowthPerMin), 1, LevelComponent.MaxLevel );
 
 	// ============ TICK ============
 	protected override void OnUpdate()
@@ -76,19 +67,12 @@ public class SpawnDirector : Component
 	// ============ SPAWNING ============
 	private void TrySpawn()
 	{
-		// 1. Safeguard against null or destroyed templates
-		if ( EnemyPrefab == null || !EnemyPrefab.IsValid() )
-		{
-			Log.Warning( "[SpawnDirector] No valid EnemyPrefab assigned!" );
-			return;
-		}
-
 		int liveEnemies = Scene
 			.GetAllComponents<Enemy>()
 			.Count( e => e.StateComp?.CurrentState != ActorStateType.Dead );
 		if ( liveEnemies >= EnemyCap ) return;
 
-		// Filter to difficulty eligible cards 
+		// Filter to difficulty eligible cards
 		var eligible = SpawnCardRegistry.All
 			.Where( c => c.MinDifficulty <= Difficulty )
 			.ToList();
@@ -103,21 +87,32 @@ public class SpawnDirector : Component
 
 		// Wait and save credits if we can't afford the rolled card
 		if ( _credits < card.Cost )
+		{
+			_cooldownTimer = SpawnCooldown;
 			return;
+		}
 
-		// 2. Clone the static prefab disabled using CloneConfig
+		// 1. Resolve this card's own prefab by path (no Editor drag needed — same
+		//    convention as SoulOrb.OnStart / BeamDeliveryMethod.Deliver)
+		if ( !ResourceLibrary.TryGet<PrefabFile>( card.PrefabPath, out var prefabFile ) )
+		{
+			Log.Warning( $"[SpawnDirector] No prefab found at '{card.PrefabPath}' for card '{card.DisplayName}'!" );
+			_cooldownTimer = SpawnCooldown;
+			return;
+		}
+
+		// 2. Clone the prefab disabled using CloneConfig
 		Vector3 spawnPos = PickSpawnPosition( player.GameObject.WorldPosition );
 		var config = new CloneConfig( new Transform( spawnPos ), null, false );
-    
-		var spawnedGO = EnemyPrefab.Clone( config );
+
+		var spawnedGO = SceneUtility.GetPrefabScene( prefabFile ).Clone( config );
 		spawnedGO.Name = card.DisplayName;
 
-		// 3. Apply the preset and level BEFORE waking the enemy up
+		// 3. Apply the stat preset BEFORE waking the enemy up
 		var enemy = spawnedGO.Components.Get<Enemy>( FindMode.EverythingInSelfAndDescendants );
 		if ( enemy != null )
 		{
 			enemy.PresetOverride = card.MobPresetId;
-			enemy.InitialLevel = CurrentEnemyLevel;
 		}
 		else
 		{
@@ -130,14 +125,13 @@ public class SpawnDirector : Component
 		_credits -= card.Cost;
 		_cooldownTimer = SpawnCooldown;
 
-		Log.Info( $"[SpawnDirector] Spawned {card.DisplayName} (Lvl {CurrentEnemyLevel}, cost {card.Cost}) | credits left: {_credits:F1}" );
+		Log.Info( $"[SpawnDirector] Spawned {card.DisplayName} (cost {card.Cost}) | credits left: {_credits:F1}" );
 	}
 
 	// ============ HELPERS ============
-	/// <summary>
 	/// Returns a point on a ring around the player at SpawnRadius distance,
 	/// with ±15 % jitter so spawns aren't perfectly equidistant.
-	/// </summary>
+
 	private Vector3 PickSpawnPosition( Vector3 playerPos )
 	{
 		float angle  = Random.Shared.NextSingle() * MathF.Tau;
@@ -173,7 +167,7 @@ public class SpawnDirector : Component
 
 		Gizmo.Draw.Color = Color.White;
 		Gizmo.Draw.ScreenText(
-			$"Director | Diff: {Difficulty:F2} | Lvl: {CurrentEnemyLevel} | Credits: {_credits:F1}/{MaxCredits} | Enemies: {Scene.GetAllComponents<Enemy>().Count()}/{EnemyCap}",
+			$"Director | Diff: {Difficulty:F2} | Credits: {_credits:F1}/{MaxCredits} | Enemies: {Scene.GetAllComponents<Enemy>().Count()}/{EnemyCap}",
 			new Vector2( 10, 120 )
 		);
 	}

@@ -15,6 +15,9 @@ public sealed class Player : Actor
 	
 	// Load the "player" / hero stat preset from MobRegistry
 	protected override string GetMobPresetId() => "player";
+
+	// The player isn't destroyed on death — a respawn component teleports and restores it.
+	protected override bool ShouldDestroyOnDeath => false;
 	
 	protected override void OnStart()
 	{

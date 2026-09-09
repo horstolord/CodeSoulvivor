@@ -96,7 +96,7 @@ public static class MobRegistry
 		{
 			Name          = "Goblin Scout",
 			Might         = 6f,
-			Swiftness     = 16f,
+			Swiftness     = 66f,
 			Endurance     = 8f,
 			// Fast and cheap — lots of soul potential in numbers
 			BaseSoulValue  = 8f,
