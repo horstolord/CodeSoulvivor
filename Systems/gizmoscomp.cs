@@ -47,7 +47,7 @@ public class gizmoscomp : Component
 			new Vector2( 100, 50 )
 		);
 		Gizmo.Draw.ScreenText(
-			$"Stagger: {s.CurrentStagger:F1}/{s.MaxStagger.Value:F1}",
+			$"Stagger: {s.CurrentPoise:F1}/{s.MaxPoise.Value:F1}",
 			new Vector2( 100, 70 )
 		);
 		Gizmo.Draw.ScreenText(

@@ -1,5 +1,7 @@
 using System;
+using System.Threading.Tasks;
 using Sandbox;
+using Sandbox.Citizen;
 using Sandbox.Code.Data;
 using Sandbox.Code.Systems;
 using Sandbox.Code.World;
@@ -37,6 +39,63 @@ public class Actor : Component
 	// Cache the preset data so OnKilled can reference it without a dict lookup
 	private MobData _mobData;
 	public ActorStateComp StateComp { get; private set; }
+	private const float POISE_REFILL_DELAY = 4f;
+	private const float POISE_STAGGER_DURATION = 0.5f;
+	private float _poiseStaggerTimer;
+
+	// Heavy‑stun fields
+	private float _staminaStunTimer;
+	private const float STAMINA_ZERO_STUN_DURATION = 3f;
+
+	// Component references for ragdoll / disabling movement
+	public CitizenAnimationHelper _animHelper;
+	private NavMeshAgent _navAgent;
+	private Collider _collider;
+	private ModelPhysics _modelPhysics;
+	private Rigidbody _rb;
+
+	public bool IsStaggered { get; private set; }
+
+	private void Ragdoll()
+	{
+		// No early exit; assume IsStaggered set by caller
+		// Player specific
+		_animHelper?.Enabled = false;
+
+		// Enemy specific
+		_navAgent?.Enabled = false;
+
+		// Common components
+		_collider?.Enabled = false;
+		_modelPhysics?.Enabled = true;
+		_rb?.Enabled = false;
+	}
+
+	private void RestoreFromRagdoll()
+	{
+		// Re-enable components if they exist in this actor
+		if (Components.GetInChildrenOrSelf<CitizenAnimationHelper>() != null)
+		{
+			_animHelper?.Enabled = true;
+		}
+
+		if (Components.GetInChildrenOrSelf<Enemy>() != null)
+		{
+			_navAgent?.Enabled = true;
+		}
+
+		_collider?.Enabled = true;
+		_modelPhysics?.Enabled = false;
+		_rb?.Enabled = true;
+	}
+
+	// Helper to gate actions (movement, attacks, etc.)
+	public bool CanAct()
+	{
+		return StateComp.CurrentState != ActorStateType.Staggered &&
+		       StateComp.CurrentState != ActorStateType.Stunned;
+	}
+
 
 	protected override void OnStart()
 	{
@@ -47,7 +106,19 @@ public class Actor : Component
 		Equipment = Components.GetOrCreate<EquipmentControl>();
 		StateComp = Components.GetOrCreate<ActorStateComp>();
 		Buffs     = Components.GetOrCreate<BuffComponent>();
-		// Starten der asynchronen Initialisierung im Hintergrund
+
+		// 2. Component references for ragdoll / disabling movement
+		_animHelper = Components.GetOrCreate<CitizenAnimationHelper>();
+		_navAgent   = Components.GetOrCreate<NavMeshAgent>();
+		_collider   = Components.Get<Collider>();
+		_modelPhysics = Components.GetOrCreate<ModelPhysics>();
+		_modelPhysics.Enabled = false;
+
+		if ( Components.GetInChildrenOrSelf<PlayerController>() != null )
+		{
+			_navAgent.Enabled = false;
+			_animHelper.Enabled = false;
+		}
 		_ = InitializeActorAsync();
 	}
 
@@ -168,12 +239,31 @@ public class Actor : Component
 				finalHealthDamage *= MathF.Max( 0f, 1f - blockReduction / 100f );
 		}
 
+		// Apply health, stamina, and poise damage
 		StatSheet.CurrentHealth  = MathF.Max( 0f, StatSheet.CurrentHealth  - finalHealthDamage );
 		StatSheet.CurrentStamina = MathF.Max( 0f, StatSheet.CurrentStamina - damage.StaminaDamage );
-		StatSheet.CurrentStagger = MathF.Max( 0f, StatSheet.CurrentStagger - damage.StaggerDamage );
+		StatSheet.CurrentPoise   = MathF.Max( 0f, StatSheet.CurrentPoise   - damage.StaminaDamage );
+		StatSheet.ResetPoiseTimer();
+
+		// Heavy stun when stamina reaches zero
+		if ( StatSheet.CurrentStamina <= 0f && !IsStaggered )
+		{
+			IsStaggered = true;
+			StateComp.CurrentState = ActorStateType.Stunned;
+			_staminaStunTimer = 0f;
+			Ragdoll();
+			Log.Info( $"{GameObject.Name} stamina depleted: entering heavy stun (ragdoll)." );
+		}
+
+		// Short poise stagger stun
+		if ( StatSheet.CurrentPoise <= 0f && StateComp.CurrentState != ActorStateType.Stunned )
+		{
+			StateComp.CurrentState = ActorStateType.Staggered;
+			_poiseStaggerTimer = 0f;
+			Log.Info( $"{GameObject.Name} poise broken: entering stagger." );
+		}
 
 		Log.Info( $"{GameObject.Name} took {finalHealthDamage:F1} dmg — HP={StatSheet.CurrentHealth:F1}/{StatSheet.MaxHealth.Value:F1}" );
-
 		if ( StatSheet.CurrentHealth <= 0f )
 			OnKilled();
 	}
@@ -255,7 +345,34 @@ public class Actor : Component
 		if ( ShouldRegenerateStamina )
 			StatSheet.CurrentStamina = MathF.Min( StatSheet.CurrentStamina + StatSheet.StaminaRegen.Value * dt, StatSheet.MaxStamina.Value );
 		StatSheet.CurrentEnergy  = MathF.Min( StatSheet.CurrentEnergy  + StatSheet.EnergyRegen.Value  * dt, StatSheet.MaxEnergy.Value );
-	}
+
+		// Poise refill timer
+		StatSheet.TimeSincePoiseDmg += dt;
+		if ( StatSheet.TimeSincePoiseDmg >= POISE_REFILL_DELAY )
+		{
+			StatSheet.CurrentPoise = StatSheet.MaxPoise.Value;
+			StatSheet.TimeSincePoiseDmg = 0f;
+		}
+
+		// Short poise hit‑stun handling
+		if ( StateComp.CurrentState == ActorStateType.Staggered )
+		{
+			_poiseStaggerTimer += dt;
+			if ( _poiseStaggerTimer >= POISE_STAGGER_DURATION )
+				StateComp.CurrentState = ActorStateType.Idle;
+		}
+
+		// Heavy stamina‑zero stun handling
+		if ( StateComp.CurrentState == ActorStateType.Stunned )
+		{
+			_staminaStunTimer += dt;
+			if ( _staminaStunTimer >= STAMINA_ZERO_STUN_DURATION )
+			{
+				StateComp.CurrentState = ActorStateType.Idle;
+				IsStaggered = false;
+				RestoreFromRagdoll();
+			}
+		}	}
 
 	protected virtual bool ShouldRegenerateStamina => true;
 }

@@ -3,7 +3,6 @@ namespace Sandbox.Code.Systems;
 public class DamageProfileDef
 {
 	public float HealthDamage;
-	public float StaggerDamage;
 	public float StaminaDamage;
 	public float KnockbackForce;
 	public HashSet<AttackTag> Tags = new();

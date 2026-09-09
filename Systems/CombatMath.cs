@@ -24,7 +24,6 @@ public static class CombatMath
 		return new DamageProfileDef
 		{
 			HealthDamage = baseDamage.HealthDamage * critMultiplier,
-			StaggerDamage = baseDamage.StaggerDamage * critMultiplier,
 			StaminaDamage = baseDamage.StaminaDamage,
 			KnockbackForce = baseDamage.KnockbackForce,
 			Tags = baseDamage.Tags,

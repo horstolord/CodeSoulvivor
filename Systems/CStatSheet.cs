@@ -33,12 +33,19 @@ public class StatSheet : Component
 	public Stat MaxHealth { get; private set; }
 	public Stat MaxStamina { get; private set; }
 	public Stat MaxEnergy { get; private set; }
-	public Stat MaxStagger { get; private set; }
+	public Stat MaxPoise { get; private set; }
 
 	public float CurrentHealth { get; set; } // Runtime value, can be modified directly
 	public float CurrentStamina { get; set; }
 	public float CurrentEnergy { get; set; }
-	public float CurrentStagger { get; set; }
+	public float CurrentPoise { get; set; }
+	public float TimeSincePoiseDmg { get; set; }
+
+	// Reset the poise damage timer – call whenever poise is damaged.
+	public void ResetPoiseTimer()
+	{
+		TimeSincePoiseDmg = 0f;
+	}
 
 	// ============ REGENERATION ============
 	public Stat HealthRegen { get; private set; }
@@ -67,7 +74,6 @@ public class StatSheet : Component
 	public Stat Range { get; private set; } // Attack reach
 
 	// ============ DEFENSIVE STATS ============
-	public Stat Poise { get; private set; } // Stagger resistance
 	public Stat Evasion { get; private set; } // Percent chance to avoid attack
 
 	// ============ UTILITY STATS ============
@@ -105,7 +111,7 @@ public class StatSheet : Component
 		MaxHealth = new Stat();
 		MaxStamina = new Stat();
 		MaxEnergy = new Stat();
-		MaxStagger = new Stat();
+		MaxPoise = new Stat();
 
 		// Initialize regeneration rates
 		HealthRegen = new Stat();
@@ -134,7 +140,7 @@ public class StatSheet : Component
 		Range = new Stat( 100f );
 
 		// Initialize defensive stats
-		Poise = new Stat( 0f );
+		MaxPoise = new Stat( 10f );
 		Evasion = new Stat( 0f );
 
 		// Initialize utility stats
@@ -157,18 +163,18 @@ public class StatSheet : Component
 		MaxHealth.BaseValue = Endurance.Value * 10f;
 		MaxStamina.BaseValue = Swiftness.Value * 5f + Endurance.Value * 5f ;
 		MaxEnergy.BaseValue = Wisdom.Value * 10f;
-		MaxStagger.BaseValue = Might.Value * 10f;
+		MaxPoise.BaseValue = Might.Value * 10f;
 
 		// Regeneration rates
 		HealthRegen.BaseValue = Endurance.Value * 0.1f;
-		StaminaRegen.BaseValue = Swiftness.Value * 1f;
+		StaminaRegen.BaseValue = Swiftness.Value * 0.1f;
 		EnergyRegen.BaseValue = Acuity.Value * 0.2f;
 
 		// Clamp current pools to max
 		CurrentHealth = MathF.Min( CurrentHealth, MaxHealth.Value );
 		CurrentStamina = MathF.Min( CurrentStamina, MaxStamina.Value );
 		CurrentEnergy = MathF.Min( CurrentEnergy, MaxEnergy.Value );
-		CurrentStagger = MathF.Min( CurrentStagger, MaxStagger.Value );
+		CurrentPoise = MathF.Min( CurrentPoise, MaxPoise.Value );
 	}
 
 	/// <summary>
@@ -180,7 +186,7 @@ public class StatSheet : Component
 		CurrentHealth = MaxHealth.Value;
 		CurrentStamina = MaxStamina.Value;
 		CurrentEnergy = MaxEnergy.Value;
-		CurrentStagger = MaxStagger.Value;
+		CurrentPoise = MaxPoise.Value;
 	}
 	/// Get a stat by name. Useful for dynamic buff application.
 	public Stat GetStat( string statName )
@@ -199,7 +205,7 @@ public class StatSheet : Component
 			"MaxHealth" => MaxHealth,
 			"MaxStamina" => MaxStamina,
 			"MaxEnergy" => MaxEnergy,
-			"MaxStagger" => MaxStagger,
+			"MaxPoise" => MaxPoise,
 
 			// Regen
 			"HealthRegen" => HealthRegen,
@@ -210,7 +216,6 @@ public class StatSheet : Component
 			"DamageMultiplier" => DamageMultiplier,
 			"CritChance" => CritChance,
 			"CritDamage" => CritDamage,
-			"Armor" => Armor,
 			"BlockReduction" => BlockReduction,
 			"ResistanceFire" => ResistanceFire,
 			"ResistanceFrost" => ResistanceFrost,
@@ -228,8 +233,8 @@ public class StatSheet : Component
 			"Range" => Range,
 
 			// Defense
-			"Poise" => Poise,
 			"Evasion" => Evasion,
+			"Armor" => Armor,
 
 			// Utility
 			"CastSpeed" => CastSpeed,
@@ -252,7 +257,7 @@ public class StatSheet : Component
 		yield return ( "MaxHealth", MaxHealth );
 		yield return ( "MaxStamina", MaxStamina );
 		yield return ( "MaxEnergy", MaxEnergy );
-		yield return ( "MaxStagger", MaxStagger );
+		yield return ( "MaxPoise", MaxPoise );
 		yield return ( "HealthRegen", HealthRegen );
 		yield return ( "StaminaRegen", StaminaRegen );
 		yield return ( "EnergyRegen", EnergyRegen );
@@ -271,7 +276,6 @@ public class StatSheet : Component
 		yield return ( "PhysicalForce", PhysicalForce );
 		yield return ( "AttackSpeed", AttackSpeed );
 		yield return ( "Range", Range );
-		yield return ( "Poise", Poise );
 		yield return ( "Evasion", Evasion );
 		yield return ( "CastSpeed", CastSpeed );
 		yield return ( "CostMultiplier", CostMultiplier );

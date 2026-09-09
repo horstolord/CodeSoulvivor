@@ -85,7 +85,6 @@ public class ProjectileDeliveryMethod : ISpellDeliveryMethod
 		var damageDef = new DamageProfileDef
 		{
 			HealthDamage = ctx.AccumulatedDamage.HealthDamage * ctx.DamageMultiplier,
-			StaggerDamage = ctx.AccumulatedDamage.StaggerDamage,
 			StaminaDamage = ctx.AccumulatedDamage.StaminaDamage,
 			KnockbackForce = ctx.AccumulatedDamage.KnockbackForce,
 			Tags = ctx.AttackTags
@@ -132,7 +131,6 @@ public class BeamDeliveryMethod : ISpellDeliveryMethod
 		var damageDef = new DamageProfileDef
 		{
 			HealthDamage = ctx.AccumulatedDamage.HealthDamage * ctx.DamageMultiplier,
-			StaggerDamage = ctx.AccumulatedDamage.StaggerDamage,
 			StaminaDamage = ctx.AccumulatedDamage.StaminaDamage,
 			KnockbackForce = ctx.AccumulatedDamage.KnockbackForce,
 			Tags = ctx.AttackTags
@@ -187,7 +185,6 @@ public class SelfTouchDeliveryMethod : ISpellDeliveryMethod
 		var damageDef = new DamageProfileDef
 		{
 			HealthDamage = ctx.AccumulatedDamage.HealthDamage * ctx.DamageMultiplier,
-			StaggerDamage = ctx.AccumulatedDamage.StaggerDamage,
 			StaminaDamage = ctx.AccumulatedDamage.StaminaDamage,
 			KnockbackForce = ctx.AccumulatedDamage.KnockbackForce,
 			Tags = ctx.AttackTags

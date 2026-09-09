@@ -91,7 +91,7 @@ public static class RuneEvaluator
 				case RuneCategory.Force:
 					ctx.AccumulatedDamage.HealthDamage += rune.BasePower
 						+ will * (rune.Scaling?.WillToPower ?? 0f);
-					ctx.AccumulatedDamage.StaggerDamage += rune.StaggerDamage;
+					ctx.AccumulatedDamage.StaminaDamage += rune.StaminaDamage;
 					ctx.AccumulatedDamage.KnockbackForce += rune.KnockbackForce;
 					if ( rune.ElementTag.HasValue ) ctx.ElementTags.Add( rune.ElementTag.Value );
 					ctx.VisualMaterial ??= rune.VisualMaterial;

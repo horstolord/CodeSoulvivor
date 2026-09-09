@@ -13,7 +13,7 @@ public sealed class CombatComponent : Component
 	/// True while the actor is actively in an attack (startup → recovery).
 	/// </summary>
 	public bool IsAttacking => CurrentAttack != null;
-
+	
 	/// <summary>
 	/// True while the cooldown between attacks is ticking down.
 	/// The actor can move but cannot start a new attack.
@@ -36,7 +36,6 @@ public sealed class CombatComponent : Component
 	{
 		if ( !CanAttack )
 			return false;
-
 		if ( !ValidateRequest( request ) )
 			return false;
 
@@ -85,7 +84,6 @@ public sealed class CombatComponent : Component
 			Damage = new DamageProfileDef
 			{
 				HealthDamage = attack.Damage.HealthDamage + attackerMight * attack.Scaling.MightToHealthDamage,
-				StaggerDamage = attack.Damage.StaggerDamage,
 				StaminaDamage = attack.Damage.StaminaDamage,
 				KnockbackForce = attack.Damage.KnockbackForce * attack.Scaling.MightToKnockbackForce,
 				Tags = [..(attack.Tags ?? new HashSet<AttackTag>())]
@@ -127,7 +125,6 @@ public sealed class CombatComponent : Component
 			return false;
 		if ( request.Attack.Scaling == null )
 			return false;
-
 		return true;
 	}
 

@@ -221,7 +221,7 @@ public sealed class Player : Actor
 			new Vector2( 10, 50 )
 		);
 		Gizmo.Draw.ScreenText(
-			$"Stagger: {StatSheet.CurrentStagger:F1}/{StatSheet.MaxStagger.Value:F1}",
+			$"Poise: {StatSheet.CurrentPoise:F1}/{StatSheet.MaxPoise.Value:F1}",
 			new Vector2( 10, 70 )
 		);
 		Gizmo.Draw.ScreenText(

@@ -2,7 +2,7 @@ namespace Sandbox.Code.Actors;
 
 public enum ActorStateType
 {
-	Idle, Attacking, Dodging, Blocking, Staggered, Casting, Dead
+	Idle, Attacking, Dodging, Blocking, Staggered, Casting, Dead, Stunned
 }
 public class ActorStateComp : Component
 {

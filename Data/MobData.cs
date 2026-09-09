@@ -102,7 +102,7 @@ public static class MobRegistry
 			BaseSoulValue  = 8f,
 			SoulsToLevel   = 60f,
 			MightPerLevel      = 0.5f,
-			SwiftnessPerLevel  = 2.0f,  // gets terrifyingly fast at high level
+			SwiftnessPerLevel  = 4.0f,  // gets terrifyingly fast at high level
 			EndurancePerLevel  = 0.8f,
 			WillPerLevel       = 0.3f,
 			AcuityPerLevel     = 0.3f,
@@ -118,7 +118,7 @@ public static class MobRegistry
 			Name          = "Orc Berserker",
 			Might         = 22f,
 			Swiftness     = 8f,
-			Endurance     = 18f,
+			Endurance     = 5f,
 			// Rare, tanky, drops a big soul orb
 			BaseSoulValue  = 20f,
 			SoulsToLevel   = 80f,

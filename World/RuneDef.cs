@@ -40,7 +40,7 @@ public class RuneDef : ICostable
 
 	// Force Runes: Base damage & Elemental metadata
 	public float BasePower;
-	public float StaggerDamage;
+	public float StaminaDamage;
 	public float KnockbackForce;
 	public RuneElementTag? ElementTag;
 	public Material VisualMaterial; // Element identity — applied to whatever the Method rune spawns

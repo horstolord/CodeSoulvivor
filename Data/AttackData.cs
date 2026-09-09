@@ -20,13 +20,12 @@ public static class AttackData
 		{
 			HealthDamage = 10f,
 			StaminaDamage = 24f,
-			StaggerDamage = 18f,
 			KnockbackForce = 100f
 		},
 		Scaling = new AttributeScalingDef
 		{
 			MightToHealthDamage = 2f,
-			MightToStaminaDamage = 1f,
+			MightToStaminaDamage = 2f,
 			MightToStaggerDamage = 3f,
 			MightToKnockbackForce = 100f
 		},
@@ -74,7 +73,7 @@ public static class AttackData
 		Damage =
 			new DamageProfileDef
 			{
-				HealthDamage = 5f, StaminaDamage = 5f, StaggerDamage = 18f, KnockbackForce = 100f
+				HealthDamage = 5f, StaminaDamage = 5f,  KnockbackForce = 100f
 			},
 		Scaling =
 			new AttributeScalingDef
@@ -120,7 +119,6 @@ public static class AttackData
 		Damage = new DamageProfileDef
 		{
 			HealthDamage = 8f,
-			StaggerDamage = 5f,
 			KnockbackForce = 100f
 		},
 		Scaling = new AttributeScalingDef { MightToHealthDamage = 1f, MightToKnockbackForce = 50f },
@@ -165,8 +163,7 @@ public static class AttackData
 			Damage = new DamageProfileDef
 			{
 				HealthDamage  = stats.BaseDamage,
-				StaggerDamage = stats.PoiseDamage,
-				StaminaDamage = 8f,
+				StaminaDamage = 12f,
 				KnockbackForce = 100f
 			},
 			Scaling = new AttributeScalingDef

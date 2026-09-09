@@ -71,7 +71,6 @@ public class SpellContext : ICostable
 			AccumulatedDamage = new DamageProfileDef
 			{
 				HealthDamage = AccumulatedDamage.HealthDamage,
-				StaggerDamage = AccumulatedDamage.StaggerDamage,
 				StaminaDamage = AccumulatedDamage.StaminaDamage,
 				KnockbackForce = AccumulatedDamage.KnockbackForce
 			},
