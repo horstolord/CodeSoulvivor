@@ -167,7 +167,7 @@ public class StatSheet : Component
 
 		// Regeneration rates
 		HealthRegen.BaseValue = Endurance.Value * 0.1f;
-		StaminaRegen.BaseValue = Swiftness.Value * 0.1f;
+		StaminaRegen.BaseValue = Swiftness.Value * 0.3f;
 		EnergyRegen.BaseValue = Acuity.Value * 0.2f;
 
 		// Clamp current pools to max

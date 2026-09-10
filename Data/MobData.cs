@@ -28,6 +28,7 @@ public class MobData
 	
 	public float Armor { get; set; } = 1f;
 	public float ArmorPerLevel { get; set; } = 1f;
+	public float Poise {get; set; } = 10.0f;
 
 	/// <summary>Base critical hit chance in percent (e.g. 5 = 5%).</summary>
 	public float CritChance { get; set; } = 5f;
@@ -54,6 +55,7 @@ public class MobData
 			WisdomPerLevel    = WisdomPerLevel,
 			Armor = Armor,
 			ArmorPerLevel =  ArmorPerLevel,
+			Poise          = Poise,
 			CritChance = CritChance,
 			CritChancePerLevel = CritChancePerLevel,
 		};
@@ -88,6 +90,7 @@ public static class MobRegistry
 			WisdomPerLevel     = 0.8f,
 			Armor =	10f,
 			ArmorPerLevel =  10f,
+			Poise          = 30f,
 			CritChance = 5f,
 			CritChancePerLevel = 0.5f
 		};
@@ -109,6 +112,7 @@ public static class MobRegistry
 			WisdomPerLevel     = 0.3f,
 			Armor =	1f,
 			ArmorPerLevel =  1f,
+			Poise          = 10f,
 			CritChance = 5f,
 			CritChancePerLevel = 0.25f
 		};
@@ -117,8 +121,8 @@ public static class MobRegistry
 		{
 			Name          = "Orc Berserker",
 			Might         = 22f,
-			Swiftness     = 8f,
-			Endurance     = 5f,
+			Swiftness     = 12f,
+			Endurance     = 15f,
 			// Rare, tanky, drops a big soul orb
 			BaseSoulValue  = 20f,
 			SoulsToLevel   = 80f,
@@ -130,6 +134,7 @@ public static class MobRegistry
 			WisdomPerLevel     = 0.5f,
 			Armor =	10f,
 			ArmorPerLevel =  10f,
+			Poise          = 20f,
 			CritChance = 5f,
 			CritChancePerLevel = 0.25f
 		};

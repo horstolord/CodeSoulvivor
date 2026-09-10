@@ -24,6 +24,7 @@ public class Actor : Component
 	public CombatComponent Combat;
 	public EquipmentControl Equipment { get; private set; }
 	public BuffComponent Buffs { get; private set; }
+	private IRagdollHandler _ragdoll;
 	/// <summary>
 	/// Raised the frame the actor dies (before any destruction/drops).
 	/// Components can subscribe to react to death — e.g. <see cref="Sandbox.Code.Systems.PlayerRespawnManager"/>.
@@ -47,47 +48,10 @@ public class Actor : Component
 	private float _staminaStunTimer;
 	private const float STAMINA_ZERO_STUN_DURATION = 3f;
 
-	// Component references for ragdoll / disabling movement
-	public CitizenAnimationHelper _animHelper;
-	private NavMeshAgent _navAgent;
-	private Collider _collider;
-	private ModelPhysics _modelPhysics;
-	private Rigidbody _rb;
-
+	
 	public bool IsStaggered { get; private set; }
 
-	private void Ragdoll()
-	{
-		// No early exit; assume IsStaggered set by caller
-		// Player specific
-		_animHelper?.Enabled = false;
-
-		// Enemy specific
-		_navAgent?.Enabled = false;
-
-		// Common components
-		_collider?.Enabled = false;
-		_modelPhysics?.Enabled = true;
-		_rb?.Enabled = false;
-	}
-
-	private void RestoreFromRagdoll()
-	{
-		// Re-enable components if they exist in this actor
-		if (Components.GetInChildrenOrSelf<CitizenAnimationHelper>() != null)
-		{
-			_animHelper?.Enabled = true;
-		}
-
-		if (Components.GetInChildrenOrSelf<Enemy>() != null)
-		{
-			_navAgent?.Enabled = true;
-		}
-
-		_collider?.Enabled = true;
-		_modelPhysics?.Enabled = false;
-		_rb?.Enabled = true;
-	}
+	
 
 	// Helper to gate actions (movement, attacks, etc.)
 	public bool CanAct()
@@ -106,21 +70,12 @@ public class Actor : Component
 		Equipment = Components.GetOrCreate<EquipmentControl>();
 		StateComp = Components.GetOrCreate<ActorStateComp>();
 		Buffs     = Components.GetOrCreate<BuffComponent>();
-
-		// 2. Component references for ragdoll / disabling movement
-		_animHelper = Components.GetOrCreate<CitizenAnimationHelper>();
-		_navAgent   = Components.GetOrCreate<NavMeshAgent>();
-		_collider   = Components.Get<Collider>();
-		_modelPhysics = Components.GetOrCreate<ModelPhysics>();
-		_modelPhysics.Enabled = false;
-
-		if ( Components.GetInChildrenOrSelf<PlayerController>() != null )
-		{
-			_navAgent.Enabled = false;
-			_animHelper.Enabled = false;
-		}
+		_ragdoll  = Components.Get<IRagdollHandler>();
 		_ = InitializeActorAsync();
 	}
+
+	private void Ragdoll() => _ragdoll?.EnterRagdoll();
+	private void RestoreFromRagdoll() => _ragdoll?.ExitRagdoll();
 
 	private async System.Threading.Tasks.Task InitializeActorAsync()
 	{

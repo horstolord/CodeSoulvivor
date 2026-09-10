@@ -12,4 +12,5 @@ namespace Sandbox.Code.Actors;
 public interface IEnemyBehavior
 {
 	void Tick( Enemy self, float dt );
+	bool Enabled {get; set;}
 }
