@@ -220,7 +220,10 @@ public class Actor : Component
 
 		Log.Info( $"{GameObject.Name} took {finalHealthDamage:F1} dmg — HP={StatSheet.CurrentHealth:F1}/{StatSheet.MaxHealth.Value:F1}" );
 		if ( StatSheet.CurrentHealth <= 0f )
+		{
 			OnKilled();
+			Ragdoll();
+		}
 	}
 
 	// ============ DEATH ============

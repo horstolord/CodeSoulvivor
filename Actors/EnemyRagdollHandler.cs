@@ -7,13 +7,15 @@ public sealed class EnemyRagdollHandler : Component, IRagdollHandler
 	[Property] public ModelPhysics Physics { get; set; }
 	[Property] public SkinnedModelRenderer Renderer { get; set; }
 	[Property] public NavMeshAgent Agent { get; set; }
-	[Property] public IEnemyBehavior Behavior { get; set; }
+	[Property] public Actor Enemy { get; set; }
 
 	protected override void OnStart()
 	{
-		if ( Physics != null && Physics.Renderer == null )
+		if ( Physics != null  )
 		{
 			Physics.Renderer = Renderer;
+			Physics.Model = Renderer.Model;
+			Physics.IgnoreRoot = true;
 			Physics.Enabled = false;
 		}	
 	}
@@ -21,14 +23,16 @@ public sealed class EnemyRagdollHandler : Component, IRagdollHandler
 	public void EnterRagdoll()
 	{
 		Agent.Enabled = false;
-		Behavior.Enabled = false;
+		Renderer.UseAnimGraph = false;
+		Enemy.Enabled = false;
 		Physics.Enabled = true;
 	}
 
 	public void ExitRagdoll()
 	{
 		Physics.Enabled = false;
-		Behavior.Enabled = true;
+		Renderer.UseAnimGraph = true;
+		Enemy.Enabled = true;
 		Agent.Enabled = true;
 	}
 }

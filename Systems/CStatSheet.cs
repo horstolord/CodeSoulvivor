@@ -111,7 +111,7 @@ public class StatSheet : Component
 		MaxHealth = new Stat();
 		MaxStamina = new Stat();
 		MaxEnergy = new Stat();
-		MaxPoise = new Stat();
+		MaxPoise = new Stat(templateData.Poise);
 
 		// Initialize regeneration rates
 		HealthRegen = new Stat();
@@ -163,7 +163,6 @@ public class StatSheet : Component
 		MaxHealth.BaseValue = Endurance.Value * 10f;
 		MaxStamina.BaseValue = Swiftness.Value * 5f + Endurance.Value * 5f ;
 		MaxEnergy.BaseValue = Wisdom.Value * 10f;
-		MaxPoise.BaseValue = Might.Value * 10f;
 
 		// Regeneration rates
 		HealthRegen.BaseValue = Endurance.Value * 0.1f;

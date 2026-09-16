@@ -7,15 +7,16 @@ public sealed class PlayerRagdollHandler : Component, IRagdollHandler
 {
 	[Property] public ModelPhysics Physics { get; set; }
 	[Property] public SkinnedModelRenderer Renderer { get; set; }
-	[Property] public CitizenAnimationHelper AnimHelper { get; set; }
+	 
 	[Property] public PlayerController Controller { get; set; }
 
 	protected override void OnStart()
 	{
-		if ( Physics != null && Physics.Renderer == null )
+		if ( Physics != null  )
 		{
-			Physics.Renderer = Renderer; // belt-and-suspenders if prefab wiring is ever missed
-
+			Physics.Renderer = Renderer; 
+			Physics.Model = Renderer.Model;
+			Physics.IgnoreRoot = true;
 			Physics.Enabled = false;
 
 		}
@@ -24,14 +25,14 @@ public sealed class PlayerRagdollHandler : Component, IRagdollHandler
 	public void EnterRagdoll()
 	{
 		Controller.UseInputControls = false;
-		AnimHelper.Enabled = false;
+		Renderer.UseAnimGraph = false;
 		Physics.Enabled = true;
 	}
 
 	public void ExitRagdoll()
 	{
 		Physics.Enabled = false;
-		AnimHelper.Enabled = true;
+		Renderer.UseAnimGraph = true;
 		Controller.UseInputControls = true;
 	}
 }
