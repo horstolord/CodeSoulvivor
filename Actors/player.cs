@@ -1,4 +1,3 @@
-
 using Sandbox.Citizen;
 using Sandbox.Code.Data;
 using Sandbox.Code.Systems;
@@ -11,6 +10,8 @@ public sealed class Player : Actor
 	[Property] public SkinnedModelRenderer BodyRenderer { get; set; }
 	public SlideControl Slide { get; private set; }
 	public SprintControl Sprint { get; private set; }
+	public HeldWeaponControl Held { get; private set; }
+	public ChargeControl Charge { get; private set; }
 	private PlayerController _playerController;
 	
 	// Load the "player" / hero stat preset from MobRegistry
@@ -27,8 +28,11 @@ public sealed class Player : Actor
 		Combat = GameObject.Components.Get<CombatComponent>();
 		Slide = Components.GetOrCreate<SlideControl>();
 		Sprint = Components.GetOrCreate<SprintControl>();
+		Charge = Components.GetOrCreate<ChargeControl>();
 		_playerController = GameObject.Components.GetInAncestorsOrSelf<PlayerController>(  );
 		BodyRenderer ??= Components.GetInChildren<SkinnedModelRenderer>();
+		Held = Components.GetOrCreate<HeldWeaponControl>();
+		Held.BodyRenderer ??= BodyRenderer;
 		if ( BodyRenderer is null )
 			Log.Warning( $"No BodyRenderer found on {GameObject.Name}" );
 		foreach ( var r in Components.GetAll<SkinnedModelRenderer>( FindMode.EnabledInSelfAndDescendants ) )
@@ -143,18 +147,18 @@ public sealed class Player : Actor
 			}
 		}
 	}
+	// Cached at charge-start so the swing that fires on release matches whatever weapon
+	// was equipped when the hold began, even if the loadout changes mid-charge.
+	private AttackDef _chargingWeaponAttack;
+
 	private void HandleCombatInput()
 	{
 		if ( Combat == null )
 			return;
-		if ( Input.Keyboard.Pressed( "attack1" ) || Input.Keyboard.Pressed( "mouse1" ) )
-		{
-			// Use equipped weapon attack; fall back to unarmed punch
-			var attack = Equipment?.GetWeaponAttackDef() ?? AttackData.Punch;
-			TryPerformAttack( attack );
-			BodyRenderer.Set( "holdtype", 5 );
-			BodyRenderer.Set( "b_attack", true );
-		}
+
+		HandleWeaponSwingInput();
+
+		// Tap-only for now — same hold pattern as the weapon swing below whenever these get charging too.
 		if ( Input.Keyboard.Pressed( "F" ) )
 		{
 			TryPerformAttack( AttackData.Kick );
@@ -164,7 +168,49 @@ public sealed class Player : Actor
 			TryPerformAttack( AttackData.Shoot );
 		}
 	}
-	private void TryPerformAttack( AttackDef attack )
+
+	private void HandleWeaponSwingInput()
+	{
+		if ( Charge == null ) return;
+
+		bool held = Input.Keyboard.Down( "attack1" ) || Input.Keyboard.Down( "mouse1" );
+
+		if ( Charge.IsCharging )
+		{
+			if ( held ) return; // still holding — keep ramping via ChargeControl.OnUpdate
+
+			// Released. charge01 is 0 if let go instantly, which is exactly today's tap-attack case.
+			float charge01 = Charge.ReleaseCharge();
+			var attack = _chargingWeaponAttack;
+			_chargingWeaponAttack = null;
+			if ( attack == null ) return;
+
+			TryPerformAttack( attack, charge01 );
+			BodyRenderer.Set( "holdtype", 5 );
+			BodyRenderer.Set( "b_attack", true );
+			return;
+		}
+
+		if ( !held || !Charge.CanStartCharge() ) return;
+
+		// Use equipped weapon attack; fall back to unarmed punch.
+		var weaponAttack = Equipment?.GetWeaponAttackDef() ?? AttackData.Punch;
+
+		float swiftness = StatSheet?.Swiftness.Value ?? 0f;
+		float swiftnessScale = weaponAttack.Scaling?.SwiftnessToChargeSpeed ?? 0f;
+		const float baseChargeSeconds = 1.0f; // TODO tune: time to max charge at 0 Swiftness scaling
+		float chargeSeconds = baseChargeSeconds / (1f + swiftness * swiftnessScale / 100f);
+		float rampRate = 1f / System.MathF.Max( 0.05f, chargeSeconds );
+
+		// Charging has its own cost, additive to the swing's own cost paid as usual on release —
+		// currently half the swing's stamina/energy cost, gradually over the hold. TODO tune.
+		if ( Charge.StartCharge( rampRate, weaponAttack.StaminaCost * 0.5f, weaponAttack.EnergyCost * 0.5f ) )
+		{
+			_chargingWeaponAttack = weaponAttack;
+		}
+	}
+
+	private void TryPerformAttack( AttackDef attack, float charge01 = 0f )
 	{
 		var facing = Scene.Camera?.WorldRotation ?? GameObject.WorldRotation;
 		facing = Rotation.From( facing.Pitch(), facing.Yaw(), 0f );
@@ -177,7 +223,7 @@ public sealed class Player : Actor
 			Facing = facing,
 			AimDirection = facing.Forward,
 			TargetPoint = null,
-			Charge01 = 0f,
+			Charge01 = charge01,
 			AlternateUse = false,
 			TriggerType = AttackTriggerType.PlayerInput
 		};
@@ -230,6 +276,3 @@ public sealed class Player : Actor
 		);
 	}
 }
-	
-	
-	

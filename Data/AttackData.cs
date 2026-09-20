@@ -27,7 +27,9 @@ public static class AttackData
 			MightToHealthDamage = 2f,
 			MightToStaminaDamage = 2f,
 			MightToStaggerDamage = 3f,
-			MightToKnockbackForce = 100f
+			MightToKnockbackForce = 100f,
+			MightToChargeBonus = 6f,      // TODO tune
+			SwiftnessToChargeSpeed = 1.5f // TODO tune
 		},
 		AnimationName = "attack_kick",
 		LockFacing = true,
@@ -81,7 +83,9 @@ public static class AttackData
 				MightToHealthDamage = 2f,
 				MightToStaminaDamage = 1f,
 				MightToStaggerDamage = 3f,
-				MightToKnockbackForce = 50f
+				MightToKnockbackForce = 50f,
+				MightToChargeBonus = 4f,      // TODO tune
+				SwiftnessToChargeSpeed = 1.5f // TODO tune
 			},
 		AnimationName = "b_attack",
 		LockFacing = true,
@@ -121,7 +125,13 @@ public static class AttackData
 			HealthDamage = 8f,
 			KnockbackForce = 100f
 		},
-		Scaling = new AttributeScalingDef { MightToHealthDamage = 1f, MightToKnockbackForce = 50f },
+		Scaling = new AttributeScalingDef
+		{
+			MightToHealthDamage = 1f,
+			MightToKnockbackForce = 50f,
+			MightToChargeBonus = 5f,      // TODO tune
+			SwiftnessToChargeSpeed = 1.5f // TODO tune
+		},
 		AnimationName = "attack_shoot",
 		LockFacing = true,
 		CanMoveDuringStartup = false,
@@ -171,7 +181,9 @@ public static class AttackData
 				MightToHealthDamage    = 2f,
 				MightToStaggerDamage   = 1f,
 				MightToStaminaDamage   = 0.5f,
-				MightToKnockbackForce  = 50f
+				MightToKnockbackForce  = 50f,
+				MightToChargeBonus     = 6f,   // TODO tune
+				SwiftnessToChargeSpeed = 1.5f  // TODO tune
 			},
 			AnimationName  = "b_attack",
 			LockFacing     = true,

@@ -61,6 +61,21 @@ public sealed class CombatComponent : Component
 		var attack = request.Attack;
 		var attackerActor = ResolveActor( request.Attacker );
 		var attackerMight = attackerActor?.StatSheet?.Might.Value ?? 0f;
+		// Live off StatSheet.AttackSpeed (buffs, loot affixes, etc.) rather than baked into the
+		// AttackDef at build time — mirrors how SpellComponent already reads CastSpeed live at cast time.
+		var attackSpeedMultiplier = MathF.Max( 0.01f, (attackerActor?.StatSheet?.AttackSpeed.Value ?? 100f) / 100f );
+
+		var baseDamage = new DamageProfileDef
+		{
+			HealthDamage = attack.Damage.HealthDamage + attackerMight * attack.Scaling.MightToHealthDamage,
+			StaminaDamage = attack.Damage.StaminaDamage,
+			KnockbackForce = attack.Damage.KnockbackForce * attack.Scaling.MightToKnockbackForce,
+			Tags = [..(attack.Tags ?? new HashSet<AttackTag>())]
+		};
+		// Charge01 is 0 for a normal tap attack, so this is a no-op unless the swing was charged.
+		var chargeBonus = attackerMight * attack.Scaling.MightToChargeBonus;
+		var damage = CombatMath.ApplyCharge( baseDamage, request.Charge01, chargeBonus );
+
 		return new AttackContext
 		{
 			Request = request,
@@ -74,25 +89,19 @@ public sealed class CombatComponent : Component
 			Charge01 = request.Charge01,
 			AlternateUse = request.AlternateUse,
 			TriggerType = request.TriggerType,
-			StartupTime = attack.StartupTime,
-			RecoveryTime = attack.RecoveryTime,
-			CooldownTime = attack.CooldownTime,
+			StartupTime = attack.StartupTime / attackSpeedMultiplier,
+			RecoveryTime = attack.RecoveryTime / attackSpeedMultiplier,
+			CooldownTime = attack.CooldownTime / attackSpeedMultiplier,
 			HealthCost = attack.HealthCost,
 			StaminaCost = attack.StaminaCost,
 			EnergyCost = attack.EnergyCost,
 			Scaling = attack.Scaling,
-			Damage = new DamageProfileDef
-			{
-				HealthDamage = attack.Damage.HealthDamage + attackerMight * attack.Scaling.MightToHealthDamage,
-				StaminaDamage = attack.Damage.StaminaDamage,
-				KnockbackForce = attack.Damage.KnockbackForce * attack.Scaling.MightToKnockbackForce,
-				Tags = [..(attack.Tags ?? new HashSet<AttackTag>())]
-			},
+			Damage = damage,
 			HitPhases = (attack.HitPhases ?? new List<HitPhaseDef>())
 				.Select( phase => new HitPhaseDef
 				{
-					StartTime = phase.StartTime,
-					EndTime = phase.EndTime,
+					StartTime = phase.StartTime / attackSpeedMultiplier,
+					EndTime = phase.EndTime / attackSpeedMultiplier,
 					StopAfterFirstHit = phase.StopAfterFirstHit,
 					Shapes = (phase.Shapes ?? new List<HitShapeDef>())
 						.Select( shape => new HitShapeDef
