@@ -34,19 +34,22 @@ public static class CombatMath
 	/// granted at Charge01=1, already attribute-resolved by the caller (e.g. Might * MightToChargeBonus).
 	/// Charge01=0 (a normal tap attack) is a no-op, so callers don't need to branch on whether the
 	/// swing was actually charged.
-	public static DamageProfileDef ApplyCharge( DamageProfileDef baseDamage, float charge01, float bonusAtMaxCharge )
+	public static DamageProfileDef ApplyCharge( DamageProfileDef baseDamage, float charge01,
+		float bonusAtMaxCharge, float knockbackBonusAtMaxCharge = 0f )
 	{
 		if ( baseDamage == null )
 			return null;
 
-		if ( charge01 <= 0f || bonusAtMaxCharge == 0f )
+		if ( charge01 <= 0f || (bonusAtMaxCharge == 0f && knockbackBonusAtMaxCharge == 0f) )
 			return baseDamage;
+
+		float t = MathF.Max( 0f, MathF.Min( 1f, charge01 ) );
 
 		return new DamageProfileDef
 		{
-			HealthDamage = baseDamage.HealthDamage + bonusAtMaxCharge * MathF.Max( 0f, MathF.Min( 1f, charge01 ) ),
+			HealthDamage = baseDamage.HealthDamage + bonusAtMaxCharge * t,
 			StaminaDamage = baseDamage.StaminaDamage,
-			KnockbackForce = baseDamage.KnockbackForce,
+			KnockbackForce = baseDamage.KnockbackForce + knockbackBonusAtMaxCharge * t,
 			Tags = baseDamage.Tags,
 			IsCrit = baseDamage.IsCrit
 		};

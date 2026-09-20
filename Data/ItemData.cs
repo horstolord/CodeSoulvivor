@@ -58,7 +58,8 @@ public static class ItemData
 				BaseAttackSpeed = 2.0f,
 				PoiseDamage = 6,
 				Weight = 4
-			}
+			},
+			WeaponVisual = new WeaponVisualDef{ PrefabPath = "swordtest.prefab"}
 		},
 		Mods = new()
 		{

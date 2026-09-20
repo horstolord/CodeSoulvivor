@@ -132,7 +132,7 @@ public sealed class HeldWeaponControl : Component
 	// ============ MODEL ============
 
 	private bool NeedsModel() =>
-		_visual != null && !_spawnSettled && !string.IsNullOrWhiteSpace( _visual.ModelPath );
+		_visual != null && !_spawnSettled && !string.IsNullOrWhiteSpace( _visual.PrefabPath );
 
 	private void TrySpawnModel()
 	{
@@ -154,24 +154,16 @@ public sealed class HeldWeaponControl : Component
 			return; // retry later
 		}
 
-		var model = Model.Load( _visual.ModelPath );
-		if ( model == null || model.IsError )
+		if ( !ResourceLibrary.TryGet<PrefabFile>( _visual.PrefabPath, out var prefabFile ) )
 		{
-			Log.Warning( $"[HeldWeapon] Could not load model '{_visual.ModelPath}' for '{_itemName}'." );
+			Log.Warning( $"[HeldWeapon] Could not find prefab '{_visual.PrefabPath}' for '{_itemName}'." );
 			_spawnSettled = true; // retrying won't fix a bad path
 			return;
 		}
 
-		var go = Scene.CreateObject();
-		go.Name = $"Held_{_itemName}";
+		var offset = new Transform( _visual.LocalPosition, Rotation.From( _visual.LocalRotation ), _visual.Scale );
+		var go = SceneUtility.GetPrefabScene( prefabFile ).Clone( new CloneConfig( offset, bone, true, $"Held_{_itemName}" ) );
 		go.Flags |= GameObjectFlags.NotSaved | GameObjectFlags.NotNetworked;
-		go.SetParent( bone, false );
-		go.LocalPosition = _visual.LocalPosition;
-		go.LocalRotation = Rotation.From( _visual.LocalRotation );
-		go.LocalScale = _visual.Scale;
-
-		var renderer = go.Components.Create<ModelRenderer>();
-		renderer.Model = model;
 
 		HeldModel = go;
 		_spawnSettled = true;

@@ -80,6 +80,8 @@ public class AttributeScalingDef
 
 	/// <summary>Extra HealthDamage at Charge01=1 per point of Might.</summary>
 	public float MightToChargeBonus;
+
+	public float MightToChargeKnockback;
 	/// <summary>Charge ramp speed per point of Swiftness — same curve shape as RuneScalingDef.AcuityToCastSpeed.</summary>
 	public float SwiftnessToChargeSpeed;
 }

@@ -186,7 +186,7 @@ public sealed class Player : Actor
 			if ( attack == null ) return;
 
 			TryPerformAttack( attack, charge01 );
-			BodyRenderer.Set( "holdtype", 5 );
+			Held?.EnterUnarmedStance();
 			BodyRenderer.Set( "b_attack", true );
 			return;
 		}

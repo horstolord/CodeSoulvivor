@@ -85,6 +85,7 @@ public static class AttackData
 				MightToStaggerDamage = 3f,
 				MightToKnockbackForce = 50f,
 				MightToChargeBonus = 4f,      // TODO tune
+				MightToChargeKnockback = 100f,
 				SwiftnessToChargeSpeed = 1.5f // TODO tune
 			},
 		AnimationName = "b_attack",
@@ -183,6 +184,7 @@ public static class AttackData
 				MightToStaminaDamage   = 0.5f,
 				MightToKnockbackForce  = 50f,
 				MightToChargeBonus     = 6f,   // TODO tune
+				MightToChargeKnockback = 100f,
 				SwiftnessToChargeSpeed = 1.5f  // TODO tune
 			},
 			AnimationName  = "b_attack",

@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Sandbox.Code.Actors;
 using Sandbox.Code.Data;
+using System;
 
 namespace Sandbox.Code.Systems;
 
@@ -20,6 +21,9 @@ public class EquipmentControl : Component
 		public ItemInstance Item;
 		public List<(Stat Stat, StatModifier Modifier)> AppliedModifiers = new();
 	}
+
+	public Action<EquipmentSlot, ItemInstance> OnEquipped;
+	public Action<EquipmentSlot, ItemInstance> OnUnequipped;
 
 	// ============ PUBLIC API ============
 
@@ -113,6 +117,7 @@ public class EquipmentControl : Component
 		bool touchedAttribute = (instance.RolledMods ?? Enumerable.Empty<ModData>()).Any( m => IsAttributeStat( m.StatName ) );
 		if ( touchedAttribute )
 			statSheet.RecalculateDerivedStats();
+		OnEquipped?.Invoke( slot, instance);
 
 		Log.Info( $"[EquipmentControl] Equipped '{item.Name}' in {slot}. " +
 		          $"Stats.Armor={stats?.Armor:F1}, mods=[{string.Join( ", ", (instance.RolledMods ?? Enumerable.Empty<ModData>()).Select( m => $"{m.StatName}:{m.Value}" ) )}], " +
@@ -161,6 +166,7 @@ public class EquipmentControl : Component
 			stat.RemoveModifier( modifier );
 
 		_slots.Remove( slot );
+		OnUnequipped?.Invoke( slot, entry.Item);
 		Log.Info( $"[EquipmentControl] Unequipped '{entry.Item?.Definition?.Name ?? "Item"}' from slot {slot}." );
 	}
 

@@ -26,6 +26,17 @@ public sealed class EquipmentData
 {
 	public EquipmentSlot Slot { get; init; }
 	public EquipmentStatBlock Stats { get; init; } = new();
+	public WeaponVisualDef WeaponVisual { get; init; } = new();
+}
+public sealed class WeaponVisualDef
+{
+	// Path relative to Assets, no "assets/" prefix. Empty = pose only, no model.
+	public string PrefabPath { get; init; }
+	public string HoldType { get; init; } = "melee_weapons";
+	public string HoldBone { get; init; } = "hold_r";
+	public Vector3 LocalPosition { get; init; } = Vector3.Zero;
+	public Angles LocalRotation { get; init; } = Angles.Zero;
+	public float Scale { get; init; } = 1f;
 }
 public sealed class EquipmentStatBlock
 {

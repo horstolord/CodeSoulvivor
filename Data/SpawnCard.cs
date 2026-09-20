@@ -36,7 +36,7 @@ public static class SpawnCardRegistry
 			PrefabPath    = "goblin.prefab",
 			DisplayName   = "Goblin Scout",
 			Cost          = 10f,
-			Weight        = 3f,
+			Weight        = 7f,
 			MinDifficulty = 0f,
 		},
 		new SpawnCard
@@ -58,7 +58,7 @@ public static class SpawnCardRegistry
 			PrefabPath    = "goblin_ranged.prefab",
 			DisplayName   = "Goblin Slinger",
 			Cost          = 12f,
-			Weight        = 2f,
+			Weight        = 1f,
 			MinDifficulty = 0f,
 		},
 	};

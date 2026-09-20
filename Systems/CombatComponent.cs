@@ -74,8 +74,8 @@ public sealed class CombatComponent : Component
 		};
 		// Charge01 is 0 for a normal tap attack, so this is a no-op unless the swing was charged.
 		var chargeBonus = attackerMight * attack.Scaling.MightToChargeBonus;
-		var damage = CombatMath.ApplyCharge( baseDamage, request.Charge01, chargeBonus );
-
+		var chargeKnockbackBonus = attackerMight * attack.Scaling.MightToChargeKnockback;
+		var damage = CombatMath.ApplyCharge( baseDamage, request.Charge01, chargeBonus, chargeKnockbackBonus );
 		return new AttackContext
 		{
 			Request = request,
