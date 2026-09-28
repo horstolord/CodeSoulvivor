@@ -11,10 +11,18 @@ public sealed class EnemyRagdollHandler : Component, IRagdollHandler
 
 	protected override void OnStart()
 	{
-		if ( Physics != null  )
+		Renderer ??= Components.GetInAncestorsOrSelf<SkinnedModelRenderer>() ?? Components.GetInChildren<SkinnedModelRenderer>();
+		Physics ??= Components.GetInAncestorsOrSelf<ModelPhysics>() ?? Components.GetInChildren<ModelPhysics>();
+		Agent ??= Components.GetInAncestorsOrSelf<NavMeshAgent>() ?? Components.GetInChildren<NavMeshAgent>();
+		Enemy ??= Components.GetInAncestorsOrSelf<Actor>() ?? Components.GetInChildren<Actor>();
+
+		if ( Physics != null )
 		{
-			Physics.Renderer = Renderer;
-			Physics.Model = Renderer.Model;
+			if ( Renderer != null )
+			{
+				Physics.Renderer = Renderer;
+				Physics.Model = Renderer.Model;
+			}
 			Physics.IgnoreRoot = true;
 			Physics.Enabled = false;
 		}	
@@ -22,17 +30,35 @@ public sealed class EnemyRagdollHandler : Component, IRagdollHandler
 
 	public void EnterRagdoll()
 	{
-		Agent.Enabled = false;
-		Renderer.UseAnimGraph = false;
-		Enemy.Enabled = false;
-		Physics.Enabled = true;
+		if ( Agent != null ) Agent.Enabled = false;
+		if ( Renderer != null ) Renderer.UseAnimGraph = false;
+		if ( Enemy != null ) Enemy.Enabled = false;
+
+		// Disable any kinematic / character movement that locks position or overrides bone simulation
+		var cc = Components.GetInAncestorsOrSelf<CharacterController>() ?? Components.GetInChildren<CharacterController>();
+		if ( cc != null ) cc.Enabled = false;
+
+		var rb = Components.GetInAncestorsOrSelf<Rigidbody>() ?? Components.GetInChildren<Rigidbody>();
+		if ( rb != null ) rb.Enabled = false;
+
+		if ( Physics != null )
+		{
+			Physics.Enabled = true;
+		}
 	}
 
 	public void ExitRagdoll()
 	{
-		Physics.Enabled = false;
-		Renderer.UseAnimGraph = true;
-		Enemy.Enabled = true;
-		Agent.Enabled = true;
+		if ( Physics != null ) Physics.Enabled = false;
+		if ( Renderer != null ) Renderer.UseAnimGraph = true;
+
+		var cc = Components.GetInAncestorsOrSelf<CharacterController>() ?? Components.GetInChildren<CharacterController>();
+		if ( cc != null ) cc.Enabled = true;
+
+		var rb = Components.GetInAncestorsOrSelf<Rigidbody>() ?? Components.GetInChildren<Rigidbody>();
+		if ( rb != null ) rb.Enabled = true;
+
+		if ( Enemy != null ) Enemy.Enabled = true;
+		if ( Agent != null ) Agent.Enabled = true;
 	}
 }

@@ -65,11 +65,7 @@ public static class CombatMath
 		var biasedDirection = (normalizedDirection + Vector3.Up / 2f).Normal;
  
 		var controller = target.Components.GetInAncestorsOrSelf<CharacterController>();
-		if ( controller != null )
-		{
-			controller.Punch( biasedDirection * force );
-			return;
-		}
+		
  
 		var rigidbody = target.Components.GetInAncestorsOrSelf<Rigidbody>();
 		rigidbody?.ApplyImpulse( biasedDirection * force );

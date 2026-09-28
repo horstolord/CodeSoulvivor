@@ -24,7 +24,7 @@ public sealed class Enemy : Actor
 	/// into the controller each tick.
 	/// </summary>
 	public NavMeshAgent Agent { get; private set; }
-
+	public SkinnedModelRenderer bodyRenderer { get; set; }
 	private CharacterController _controller;
 	private IEnemyBehavior _behavior;
 	private Vector3 _knockbackVelocity;
@@ -40,6 +40,8 @@ public sealed class Enemy : Actor
 		Agent.UpdatePosition = false; // CharacterController drives position, see field comment
 		Agent.UpdateRotation = false; // Enemy.FaceTarget() handles facing
 		Agent.Acceleration = MathF.Max( Agent.Acceleration, 1000f ); // snappy — Facepunch recommends accel >= max speed
+
+		bodyRenderer ??= Components.GetInAncestorsOrSelf<SkinnedModelRenderer>() ?? Components.GetInChildren<SkinnedModelRenderer>();
 
 		_behavior = Components.Get<IEnemyBehavior>();
 		if ( _behavior == null )
@@ -76,6 +78,10 @@ public sealed class Enemy : Actor
 		}
 
 		_behavior?.Tick( this, Time.Delta );
+		
+		float speed = Agent.Velocity.WithZ( 0 ).Length;
+		bodyRenderer?.Set( "f_speed", speed > 5f ? 1f : 0f );
+		bodyRenderer?.Set( "b_moving", speed > 5f );
 
 		if ( _controller != null )
 		{
@@ -98,7 +104,14 @@ public sealed class Enemy : Actor
 		if ( Target == null ) return;
 		var direction = (Target.WorldPosition - GameObject.WorldPosition).WithZ( 0 ).Normal;
 		if ( direction.LengthSquared > 0.01f )
-			GameObject.WorldRotation = Rotation.LookAt( direction, Vector3.Up );
+		{
+			var rot = Rotation.LookAt( direction, Vector3.Up );
+			GameObject.WorldRotation = rot;
+			if ( GameObject.Parent != null && GameObject.Parent != Scene )
+			{
+				GameObject.Parent.WorldRotation = rot;
+			}
+		}
 	}
 
 	public float DistanceToTarget => Target == null
@@ -143,7 +156,7 @@ public sealed class Enemy : Actor
 		if ( Combat.TryStartAttack( request ) )
 		{
 			// Cooldown is now fully managed by CombatComponent — no manual timer needed.
-			var bodyRenderer = Components.GetInChildren<SkinnedModelRenderer>();
+			var bodyRenderer = Components.GetInParentOrSelf<SkinnedModelRenderer>();
 			bodyRenderer?.Set( "b_attack", true );
 			return true;
 		}

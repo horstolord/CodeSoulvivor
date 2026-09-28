@@ -36,7 +36,7 @@ public static class SpawnCardRegistry
 			PrefabPath    = "goblin.prefab",
 			DisplayName   = "Goblin Scout",
 			Cost          = 10f,
-			Weight        = 7f,
+			Weight        = 10f,
 			MinDifficulty = 0f,
 		},
 		new SpawnCard
@@ -45,7 +45,7 @@ public static class SpawnCardRegistry
 			PrefabPath    = "orc.prefab",
 			DisplayName   = "Orc Berserker",
 			Cost          = 15f,
-			Weight        = 3f,
+			Weight        = 1f,
 			MinDifficulty = 0f,  // 
 		},
 		// Example new archetype. Swap PrefabPath for your real ranged prefab

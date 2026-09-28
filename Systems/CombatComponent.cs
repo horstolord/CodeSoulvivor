@@ -251,6 +251,8 @@ public sealed class CombatComponent : Component
 				attacker.StateComp.CurrentState = ActorStateType.Idle;
  
 			CurrentAttack = null;
+			var renderer = Components.GetInParentOrSelf<SkinnedModelRenderer>() ?? Components.GetInChildren<SkinnedModelRenderer>();
+			renderer?.Set( "b_attack", false );
 			_hitObjects.Clear();
 		}
 	}

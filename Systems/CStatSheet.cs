@@ -140,7 +140,6 @@ public class StatSheet : Component
 		Range = new Stat( 100f );
 
 		// Initialize defensive stats
-		MaxPoise = new Stat( 10f );
 		Evasion = new Stat( 0f );
 
 		// Initialize utility stats

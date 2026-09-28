@@ -70,7 +70,7 @@ public class Actor : Component
 		Equipment = Components.GetOrCreate<EquipmentControl>();
 		StateComp = Components.GetOrCreate<ActorStateComp>();
 		Buffs     = Components.GetOrCreate<BuffComponent>();
-		_ragdoll  = Components.Get<IRagdollHandler>();
+		_ragdoll  = Components.GetInAncestorsOrSelf<IRagdollHandler>() ?? Components.GetInChildren<IRagdollHandler>();
 		_ = InitializeActorAsync();
 	}
 
