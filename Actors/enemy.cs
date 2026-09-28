@@ -17,11 +17,9 @@ public sealed class Enemy : Actor
 	[Property] public AttackDef AttackType { get; set; } // The attack type this enemy uses
 
 	/// <summary>
-	/// Navmesh-aware velocity solver only — UpdatePosition is off, so it never moves the
-	/// GameObject itself. CharacterController stays the sole position authority so that
-	/// Punch()-based knockback (CombatMath.ApplyKnockback, ProjComp.OnHit) keeps working
-	/// exactly as before. Behaviors call Agent.MoveTo()/Stop(); Enemy bridges the result
-	/// into the controller each tick.
+	/// Navmesh-aware velocity solver only — UpdatePosition is off, so Enemy applies its
+	/// velocity to the GameObject and syncs the simulated agent position after movement.
+	/// Behaviors call Agent.MoveTo()/Stop(); Enemy bridges the result into movement each tick.
 	/// </summary>
 	public NavMeshAgent Agent { get; private set; }
 	public SkinnedModelRenderer bodyRenderer { get; set; }
@@ -37,9 +35,10 @@ public sealed class Enemy : Actor
 		Combat = Components.Get<CombatComponent>();
 
 		Agent = Components.GetOrCreate<NavMeshAgent>();
-		Agent.UpdatePosition = false; // CharacterController drives position, see field comment
+		Agent.UpdatePosition = false; // Enemy applies movement and syncs AgentPosition manually
 		Agent.UpdateRotation = false; // Enemy.FaceTarget() handles facing
 		Agent.Acceleration = MathF.Max( Agent.Acceleration, 1000f ); // snappy — Facepunch recommends accel >= max speed
+		Agent.SetAgentPosition( GameObject.WorldPosition );
 
 		bodyRenderer ??= Components.GetInAncestorsOrSelf<SkinnedModelRenderer>() ?? Components.GetInChildren<SkinnedModelRenderer>();
 
@@ -64,7 +63,14 @@ public sealed class Enemy : Actor
 	}
 	protected override void OnFixedUpdate()
 	{
-		if ( Target == null || Agent == null ) return;
+		if ( Agent == null ) return;
+
+		// UpdatePosition is disabled because movement is applied below. Keep the
+		// NavMeshAgent's simulated position aligned with the actual GameObject so
+		// paths and avoidance don't continue from a stale position.
+		Agent.SetAgentPosition( GameObject.WorldPosition );
+
+		if ( Target == null ) return;
 
 		Agent.MaxSpeed = StatSheet?.MoveSpeed?.Value ?? 120f;
 
@@ -74,6 +80,7 @@ public sealed class Enemy : Actor
 		{
 			Agent.Stop();
 			if ( _controller != null ) _controller.Velocity = Vector3.Zero;
+			Agent.SetAgentPosition( GameObject.WorldPosition );
 			return;
 		}
 
@@ -92,6 +99,8 @@ public sealed class Enemy : Actor
 			// Fallback direct movement in case CharacterController is missing
 			GameObject.WorldPosition += (Agent.Velocity + _knockbackVelocity) * Time.Delta;
 		}
+
+		Agent.SetAgentPosition( GameObject.WorldPosition );
 	}
 
 	/// <summary>
@@ -107,10 +116,10 @@ public sealed class Enemy : Actor
 		{
 			var rot = Rotation.LookAt( direction, Vector3.Up );
 			GameObject.WorldRotation = rot;
-			if ( GameObject.Parent != null && GameObject.Parent != Scene )
-			{
-				GameObject.Parent.WorldRotation = rot;
-			}
+			//if ( GameObject.Parent != null && GameObject.Parent != Scene )
+			//{
+			//	GameObject.Parent.WorldRotation = rot;
+			//}
 		}
 	}
 
