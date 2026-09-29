@@ -56,7 +56,8 @@ public class Actor : Component
 	// Helper to gate actions (movement, attacks, etc.)
 	public bool CanAct()
 	{
-		return StateComp.CurrentState != ActorStateType.Staggered &&
+		return StateComp != null &&
+		       StateComp.CurrentState != ActorStateType.Staggered &&
 		       StateComp.CurrentState != ActorStateType.Stunned;
 	}
 
@@ -222,8 +223,9 @@ public class Actor : Component
 		if ( StatSheet.CurrentHealth <= 0f )
 		{
 			OnKilled();
-			Ragdoll();
+			if (!IsStaggered) Ragdoll();
 		}
+		
 	}
 
 	// ============ DEATH ============

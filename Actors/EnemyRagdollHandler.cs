@@ -33,7 +33,7 @@ public sealed class EnemyRagdollHandler : Component, IRagdollHandler
 			// leaving no bodies to drive the renderer after its animation graph stops.
 			if ( Physics.PhysicsWereCreated && (Physics.Bodies == null || Physics.Bodies.Count == 0) )
 				Physics.PhysicsWereCreated = false;
-			Physics.IgnoreRoot = true;
+			Physics.IgnoreRoot = false;
 			Physics.Enabled = false;
 		}	
 	}
@@ -47,7 +47,6 @@ public sealed class EnemyRagdollHandler : Component, IRagdollHandler
 
 		if ( Agent != null ) Agent.Enabled = false;
 		if ( Renderer != null ) Renderer.UseAnimGraph = false;
-		if ( Enemy != null ) Enemy.Enabled = false;
 		// ModelCollider is one whole-model collider on the renderer object; it does not
 		// follow individual bones and can obstruct the bone-level ragdoll colliders.
 		if ( ModelCollider != null ) ModelCollider.Enabled = false;

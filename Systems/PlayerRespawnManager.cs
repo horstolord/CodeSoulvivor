@@ -109,11 +109,14 @@ public sealed class PlayerRespawnManager : Component
 		// 3. Restore state and resource pools.
 		if ( player.StateComp != null )
 			player.StateComp.CurrentState = ActorStateType.Idle;
+		//4. Restore from ragdoll
+		var ragdoll = player.Components.GetInChildrenOrSelf<IRagdollHandler>();
+		ragdoll?.ExitRagdoll();
 
 		player.StatSheet?.FillCurrentPoolsToMax();
 		player.StatSheet?.RecalculateDerivedStats();
 
-		// 4. Refill flasks if configured.
+		// 5. Refill flasks if configured.
 		if ( RefillFlasksOnRespawn )
 			Presentation.UI.LocalInventory?.RefillFlasks( 99 );
 

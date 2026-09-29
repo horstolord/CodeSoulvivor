@@ -168,6 +168,11 @@ public class StatSheet : Component
 		StaminaRegen.BaseValue = Swiftness.Value * 0.3f;
 		EnergyRegen.BaseValue = Acuity.Value * 0.2f;
 
+		// Movement stats (based on attributes)
+		MoveSpeed.BaseValue = 100f + Swiftness.Value * 2f;
+		AccelerationSpeed.BaseValue = 100f + Swiftness.Value;
+		JumpPower.BaseValue = 100f + Might.Value;
+
 		// Clamp current pools to max
 		CurrentHealth = MathF.Min( CurrentHealth, MaxHealth.Value );
 		CurrentStamina = MathF.Min( CurrentStamina, MaxStamina.Value );

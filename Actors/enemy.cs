@@ -63,6 +63,13 @@ public sealed class Enemy : Actor
 	}
 	protected override void OnFixedUpdate()
 	{
+		if ( !CanAct() )
+		{
+			Agent?.Stop();
+			if ( _controller != null ) _controller.Velocity = Vector3.Zero;
+			return;
+		}
+
 		if ( Agent == null ) return;
 
 		// UpdatePosition is disabled because movement is applied below. Keep the
