@@ -110,20 +110,12 @@ public sealed class Projectile : Component
     private void OnHit( GameObject target )
     {
 	    var actor = target.Components.GetInAncestorsOrSelf<Actor>();
-	    var rb = target.Components.GetInAncestorsOrSelf<Rigidbody>();
-	    var cc = target.Components.GetInAncestorsOrSelf<CharacterController>();
- 
+  
 	    var knockbackDirection = (GameObject.WorldRotation.Forward + Vector3.Up / 2f).Normal;
 	    actor?.ApplyDamage( Payload.Damage );
 
-	    if ( cc != null )
-	    {
-		    cc.Punch( knockbackDirection * Payload.Damage.KnockbackForce );
-	    }
-	    else if ( rb != null )
-	    {
-		    rb.ApplyImpulse( knockbackDirection * Payload.Damage.KnockbackForce );
-	    }
+	    CombatMath.ApplyKnockback( target, knockbackDirection, Payload.Damage.KnockbackForce, addUpwardBias: false );
+	    SpellEffectApplier.Apply( Payload?.SourceContext as SpellContext, target, GameObject.WorldPosition );
  
 	    _hitCount++;
  

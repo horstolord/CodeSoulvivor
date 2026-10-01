@@ -212,6 +212,13 @@ public sealed class Player : Actor
 
 	private void TryPerformAttack( AttackDef attack, float charge01 = 0f )
 	{
+		bool consumeBankedCharge = false;
+		if ( Charge != null && Charge.TryGetBankedCharge( out var bankedCharge ) )
+		{
+			charge01 = System.Math.Clamp( charge01 + bankedCharge, 0f, 1f );
+			consumeBankedCharge = true;
+		}
+
 		var facing = Scene.Camera?.WorldRotation ?? GameObject.WorldRotation;
 		facing = Rotation.From( facing.Pitch(), facing.Yaw(), 0f );
 		var request = new AttackRequest
@@ -228,7 +235,9 @@ public sealed class Player : Actor
 			TriggerType = AttackTriggerType.PlayerInput
 		};
 		DebugAttackAnimation( attack );
-		Combat.TryStartAttack( request );
+		bool started = Combat.TryStartAttack( request );
+		if ( started && consumeBankedCharge )
+			Charge.TryConsumeBankedCharge( out _ );
 		
 
 	}

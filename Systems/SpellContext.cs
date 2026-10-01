@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Sandbox;
 using Sandbox.Code.World;
@@ -22,6 +23,7 @@ public class SpellContext : ICostable
 	public float EnergyCost => TotalEnergyCost;
 
 	public float TotalCastDelay;
+	public float Charge01;
 
 	// Active Modifier Stack (Mutated by Modifier Runes)
 	public float DamageMultiplier = 1.0f;
@@ -39,6 +41,7 @@ public class SpellContext : ICostable
 
 	// Nested Trigger Runes for OnHit / Expiration Sub-Spells
 	public List<RuneDef> TriggerPayloadRunes = new();
+	public List<SpellEffect> Effects = new();
 
 	// Multicast / Branching Draw Count
 	public int MulticastCount = 1;
@@ -46,6 +49,30 @@ public class SpellContext : ICostable
 	// Recursion Limit Safety
 	public int RecursionDepth = 0;
 	public const int MaxRecursionDepth = 4;
+
+	public void ApplyCharge( float charge01, ChargeScalingDef scaling, float will )
+	{
+		Charge01 = Math.Clamp( charge01, 0f, 1f );
+		if ( Charge01 <= 0f ) return;
+
+		scaling ??= ChargeScalingDef.Default;
+		float damageBonus = MathF.Max( 0f, scaling.DamageBonusAtMaxCharge + will * scaling.WillToDamageAtMaxCharge );
+		float damageMultiplier = 1f + damageBonus * Charge01;
+		float costMultiplier = 1f + MathF.Max( 0f, scaling.CostIncreaseAtMaxCharge ) * Charge01;
+
+		AccumulatedDamage.HealthDamage *= damageMultiplier;
+		AccumulatedDamage.StaminaDamage *= damageMultiplier;
+		AccumulatedDamage.KnockbackForce *= damageMultiplier;
+		foreach ( var effect in Effects )
+		{
+			if ( effect == null ) continue;
+			effect.Strength *= damageMultiplier;
+			effect.PotencyMultiplier *= damageMultiplier;
+		}
+		TotalHealthCost *= costMultiplier;
+		TotalStaminaCost *= costMultiplier;
+		TotalEnergyCost *= costMultiplier;
+	}
 
 	public SpellContext Clone()
 	{
@@ -59,6 +86,7 @@ public class SpellContext : ICostable
 			TotalStaminaCost = TotalStaminaCost,
 			TotalEnergyCost = TotalEnergyCost,
 			TotalCastDelay = TotalCastDelay,
+			Charge01 = Charge01,
 			DamageMultiplier = DamageMultiplier,
 			SpeedMultiplier = SpeedMultiplier,
 			BonusPierce = BonusPierce,
@@ -75,6 +103,7 @@ public class SpellContext : ICostable
 				KnockbackForce = AccumulatedDamage.KnockbackForce
 			},
 			TriggerPayloadRunes = new List<RuneDef>( TriggerPayloadRunes ),
+			Effects = Effects.ConvertAll( effect => effect?.Clone() ),
 			MulticastCount = MulticastCount,
 			RecursionDepth = RecursionDepth
 		};

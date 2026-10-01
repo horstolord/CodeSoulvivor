@@ -54,6 +54,7 @@ public class StatSheet : Component
 
 	// ============ COMBAT STATS ============
 	public Stat DamageMultiplier { get; private set; } // 100 = 1.0x, 150 = 1.5x
+	public Stat WeaponDamage { get; private set; } // Flat bonus for attacks explicitly marked as weapon attacks
 	public Stat CritChance { get; private set; } // Percent
 	public Stat CritDamage { get; private set; } // Percent
 	public Stat Armor { get; private set; } // Damage reduction
@@ -77,7 +78,7 @@ public class StatSheet : Component
 	public Stat Evasion { get; private set; } // Percent chance to avoid attack
 
 	// ============ UTILITY STATS ============
-	public Stat CastSpeed {get; private set;} // delay before next spell!
+	public Stat CastSpeed {get; private set;} // scales spell wind-up duration
 	public Stat CostMultiplier { get; private set; } // Health/stamina/energy cost 100 = 1.0x
 	public Stat EffectDuration { get; private set; } // How long buffs/debuffs last (percent)
 	public Stat EffectPotency { get; private set; } // How strong buffs/debuffs are (percent)
@@ -120,6 +121,7 @@ public class StatSheet : Component
 
 		// Initialize combat stats
 		DamageMultiplier = new Stat( 100f ); // Default 1.0x
+		WeaponDamage = new Stat( 0f );
 		CritChance = new Stat( templateData.CritChance );
 		CritDamage = new Stat( 50f ); // Default 1.5x = 150%
 		Armor = new Stat( templateData.Armor );
@@ -217,6 +219,7 @@ public class StatSheet : Component
 
 			// Combat
 			"DamageMultiplier" => DamageMultiplier,
+			"WeaponDamage" => WeaponDamage,
 			"CritChance" => CritChance,
 			"CritDamage" => CritDamage,
 			"BlockReduction" => BlockReduction,
@@ -265,6 +268,7 @@ public class StatSheet : Component
 		yield return ( "StaminaRegen", StaminaRegen );
 		yield return ( "EnergyRegen", EnergyRegen );
 		yield return ( "DamageMultiplier", DamageMultiplier );
+		yield return ( "WeaponDamage", WeaponDamage );
 		yield return ( "CritChance", CritChance );
 		yield return ( "CritDamage", CritDamage );
 		yield return ( "Armor", Armor );

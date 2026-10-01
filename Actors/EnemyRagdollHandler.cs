@@ -11,6 +11,7 @@ public sealed class EnemyRagdollHandler : Component, IRagdollHandler
 	[Property] public ModelCollider ModelCollider { get; set; }
 
 	private bool _modelColliderWasEnabled;
+	private bool _isRagdolled;
 
 	protected override void OnStart()
 	{
@@ -62,10 +63,18 @@ public sealed class EnemyRagdollHandler : Component, IRagdollHandler
 		{
 			Physics.Enabled = true;
 		}
+
+		_isRagdolled = true;
+	}
+
+	public bool TryApplyImpulse( Vector3 impulse )
+	{
+		return _isRagdolled && RagdollImpulseApplier.TryApply( Physics, impulse );
 	}
 
 	public void ExitRagdoll()
 	{
+		_isRagdolled = false;
 		if ( Physics != null ) Physics.Enabled = false;
 		if ( ModelCollider != null ) ModelCollider.Enabled = _modelColliderWasEnabled;
 		if ( Renderer != null ) Renderer.UseAnimGraph = true;

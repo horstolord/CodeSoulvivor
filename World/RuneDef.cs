@@ -8,13 +8,28 @@ public enum RuneCategory { Force, Method, Modifier, Multicast, Trigger }
 
 public enum RuneElementTag { Fire, Frost, Air, Earth, Light, Dark }
 
-public enum RuneDeliveryType { Projectile, Beam, SelfTouch, AoE }
+// Keep existing serialized values stable: SelfTouch was the old Nova behaviour.
+public enum RuneDeliveryType { Projectile = 0, Beam = 1, Nova = 2, AoE = 3, Self = 4, Cone = 5 }
 
 public class RuneScalingDef
 {
 	public float WillToPower;
 	public float AcuityToCastSpeed;
 	public float WisdomToDuration;
+	public float WillToEffectPotency;
+	public float AcuityToRange;
+}
+
+/// <summary>How stored charge changes a spell sequence at full charge.</summary>
+public class ChargeScalingDef
+{
+	public float BaseChargeSeconds = 1f;
+	public float AcuityToChargeSpeed = 2f;
+	public float DamageBonusAtMaxCharge = 0.5f;
+	public float CostIncreaseAtMaxCharge = 0.5f;
+	public float WillToDamageAtMaxCharge;
+
+	public static ChargeScalingDef Default { get; } = new();
 }
 
 public class RuneDef : ICostable
@@ -35,8 +50,12 @@ public class RuneDef : ICostable
 	public float RechargeDelayModifier = 0.0f;
 	public float Range = 1000f;
 	public float AoERadius = 150f;
+	public float ConeAngle = 90f;
+	public bool ConeRequiresLineOfSight = true;
 
 	public RuneScalingDef Scaling;
+	/// <summary>Optional charge scaling for method runes. The first configured method wins.</summary>
+	public ChargeScalingDef ChargeScaling;
 
 	// Force Runes: Base damage & Elemental metadata
 	public float BasePower;
@@ -52,6 +71,8 @@ public class RuneDef : ICostable
 
 	public string BeamPrefabPath;
 	public float BeamVisualLength = 100f;
+	/// <summary>Optional resolved effect carried by a Method rune; this is not a player-facing rune category.</summary>
+	public SpellEffect Effect;
 	// Modifier Runes: Mutator action for active SpellContext
 	public Action<SpellContext> ModifierEffect;
 

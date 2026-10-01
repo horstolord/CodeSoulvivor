@@ -57,13 +57,13 @@ public sealed class ChargeControl : Component
 		// A banked charge clears on the same interrupt as an active one, whether or not we're
 		// mid-ramp right now — checked independently so it still fires while just standing around
 		// carrying a banked charge with nothing actively charging.
-		if ( HasBankedCharge && !_actor.CanAct() )
+		if ( HasBankedCharge && IsActorInterrupted() )
 			ClearBankedCharge();
 
 		if ( !IsCharging ) return;
 
 		// Staggered/Stunned/Dead mid-charge — lose it outright, keep whatever was already paid.
-		if ( !_actor.CanAct() )
+		if ( IsActorInterrupted() )
 		{
 			CancelCharge();
 			return;
@@ -71,6 +71,12 @@ public sealed class ChargeControl : Component
 
 		Charge01 = Math.Clamp( Charge01 + _rampRate * Time.Delta, 0f, 1f );
 		PayIncrementalCost();
+	}
+
+	private bool IsActorInterrupted()
+	{
+		var state = _actor?.StateComp?.CurrentState;
+		return state is ActorStateType.Staggered or ActorStateType.Stunned or ActorStateType.Dead;
 	}
 
 	public bool CanStartCharge()
@@ -167,7 +173,7 @@ public sealed class ChargeControl : Component
 			_actor.StateComp.CurrentState = ActorStateType.Idle;
 	}
 
-	// ============ BANKING (scaffolding only — nothing calls this yet) ============
+	// ============ BANKING (shared by any action) ============
 	// Force action will use "gather in advance, infuse the next valid action" instead of
 	// hold-and-release. Fields are here so that pass doesn't need to touch this component's
 	// shape again; the actual Bank()/consume wiring waits until Force Action itself is scoped.
@@ -176,7 +182,7 @@ public sealed class ChargeControl : Component
 	/// <summary>Seconds a banked charge survives unspent. -1 = infinite (unused for now).</summary>
 	[Property] public float BankedChargeLifetime { get; set; } = -1f;
 
-	/// <summary>Banks the current charge instead of spending it immediately. Unused until Force Action wires a trigger to it.</summary>
+	/// <summary>Banks the current charge instead of spending it immediately.</summary>
 	public void Bank()
 	{
 		if ( !IsCharging ) return;
@@ -184,6 +190,27 @@ public sealed class ChargeControl : Component
 		BankedCharge01 = Charge01;
 		HasBankedCharge = true;
 		EndChargeInternal();
+	}
+
+	/// <summary>Reads the bank without consuming it, so callers can validate an action first.</summary>
+	public bool TryGetBankedCharge( out float charge01 )
+	{
+		charge01 = BankedCharge01;
+		return HasBankedCharge;
+	}
+
+	/// <summary>Consumes banked charge after the caller has successfully started its action.</summary>
+	public bool TryConsumeBankedCharge( out float charge01 )
+	{
+		if ( !HasBankedCharge )
+		{
+			charge01 = 0f;
+			return false;
+		}
+
+		charge01 = BankedCharge01;
+		ClearBankedCharge();
+		return true;
 	}
 
 	/// <summary>Clears any banked charge — called on the same Stagger/Stun/Death interrupt as an active charge.</summary>

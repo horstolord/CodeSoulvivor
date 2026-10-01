@@ -9,6 +9,7 @@ public sealed class PlayerRagdollHandler : Component, IRagdollHandler
 	[Property] public SkinnedModelRenderer Renderer { get; set; }
 	 
 	[Property] public PlayerController Controller { get; set; }
+	private bool _isRagdolled;
 
 	protected override void OnStart()
 	{
@@ -27,10 +28,17 @@ public sealed class PlayerRagdollHandler : Component, IRagdollHandler
 		Controller.UseInputControls = false;
 		Renderer.UseAnimGraph = false;
 		Physics.Enabled = true;
+		_isRagdolled = true;
+	}
+
+	public bool TryApplyImpulse( Vector3 impulse )
+	{
+		return _isRagdolled && RagdollImpulseApplier.TryApply( Physics, impulse );
 	}
 
 	public void ExitRagdoll()
 	{
+		_isRagdolled = false;
 		Physics.Enabled = false;
 		Renderer.UseAnimGraph = true;
 		Controller.UseInputControls = true;

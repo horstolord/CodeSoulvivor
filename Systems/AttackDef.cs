@@ -59,6 +59,8 @@ public class AttackDef : ICostable
 	public float StaminaCost { get; set; }
 	public float EnergyCost { get; set; }
 	public DamageProfileDef Damage = new();
+	/// <summary>Fraction of StatSheet.WeaponDamage added to health damage. Defaults to zero.</summary>
+	public float WeaponDamageEffectiveness;
 	public AttributeScalingDef Scaling = new();
 	public List<HitPhaseDef> HitPhases = new();
 	public HashSet<AttackTag> Tags = new();

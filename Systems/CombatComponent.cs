@@ -67,7 +67,8 @@ public sealed class CombatComponent : Component
 
 		var baseDamage = new DamageProfileDef
 		{
-			HealthDamage = attack.Damage.HealthDamage + attackerMight * attack.Scaling.MightToHealthDamage,
+			HealthDamage = attack.Damage.HealthDamage + attackerMight * attack.Scaling.MightToHealthDamage
+				+ (attackerActor?.StatSheet?.WeaponDamage.Value ?? 0f) * attack.WeaponDamageEffectiveness,
 			StaminaDamage = attack.Damage.StaminaDamage,
 			KnockbackForce = attack.Damage.KnockbackForce * attack.Scaling.MightToKnockbackForce,
 			Tags = [..(attack.Tags ?? new HashSet<AttackTag>())]
@@ -332,9 +333,10 @@ public sealed class CombatComponent : Component
 			damage.KnockbackForce *= attackerActor.StatSheet.PhysicalForce.Value / 100f;
 		}
  
-		actor?.ApplyDamage( damage );
+		
 		_playercontroller?.PreventGrounding(0.5f); // doesnt work if hit only once???
 		CombatMath.ApplyKnockback( target, context.Facing.Forward, damage.KnockbackForce );
+		actor?.ApplyDamage( damage );
 	}
 
 	private Actor ResolveActor( GameObject gameObject )

@@ -210,7 +210,8 @@ public static class ItemData
 		Equipment = new EquipmentData
 		{
 			Slot = EquipmentSlot.MainHand1,
-			Stats = new EquipmentStatBlock { BaseDamage = 10, BaseAttackSpeed = 2f, PoiseDamage = 4, Weight = 3 }
+			Stats = new EquipmentStatBlock { BaseDamage = 10, BaseAttackSpeed = 2f, PoiseDamage = 4, Weight = 3 },
+			WeaponVisual = new WeaponVisualDef{ PrefabPath = "sword1.prefab"}
 		},
 		Mods = new()
 	};

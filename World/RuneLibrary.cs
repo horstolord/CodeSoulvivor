@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Sandbox.Code.Systems;
+using Sandbox.Code.Data;
  
 namespace Sandbox.Code.World;
  
@@ -125,6 +126,66 @@ public static class RuneLibrary
 		BeamPrefabPath = "beamblue.prefab",
 		Scaling = new RuneScalingDef { AcuityToCastSpeed = 2f }
 	};
+
+	private static BuffDef FleetnessBuff => new( "cantrip_fleetness", "Fleetness", 5f )
+	{
+		Modifiers = new() { new BuffModifier( "MoveSpeed", 35f, ModifierType.Percent ) }
+	};
+
+	private static BuffDef EmberWeaponBuff => new( "cantrip_ember_weapon", "Ember Weapon", 8f )
+	{
+		Modifiers = new() { new BuffModifier( "WeaponDamage", 12f ) }
+	};
+
+	public static readonly RuneDef Fleetness = new()
+	{
+		Id = "cantrip_fleetness",
+		DisplayName = "Fleetness",
+		Category = RuneCategory.Method,
+		DeliveryType = RuneDeliveryType.Self,
+		CastDelay = 1f,
+		EnergyCost = 30f,
+		Effect = new SpellEffect { Type = SpellEffectType.Buff, Buff = FleetnessBuff, Duration = FleetnessBuff.Duration },
+		Scaling = new RuneScalingDef { WillToEffectPotency = 1f, WisdomToDuration = 1f }
+	};
+
+	public static readonly RuneDef EmberWeapon = new()
+	{
+		Id = "cantrip_ember_weapon",
+		DisplayName = "Ember Weapon",
+		Category = RuneCategory.Method,
+		DeliveryType = RuneDeliveryType.Self,
+		CastDelay = 0.25f,
+		EnergyCost = 4f,
+		Effect = new SpellEffect { Type = SpellEffectType.Buff, Buff = EmberWeaponBuff, Duration = EmberWeaponBuff.Duration },
+		Scaling = new RuneScalingDef { WillToEffectPotency = 1f, WisdomToDuration = 1f }
+	};
+
+	public static readonly RuneDef Launch = new()
+	{
+		Id = "cantrip_launch",
+		DisplayName = "Launch",
+		Category = RuneCategory.Method,
+		DeliveryType = RuneDeliveryType.Self,
+		CastDelay = 0.05f,
+		EnergyCost = 30f,
+		Effect = new SpellEffect { Type = SpellEffectType.Impulse, Direction = SpellImpulseDirection.WorldUp, Strength = 9000f },
+		Scaling = new RuneScalingDef { WillToEffectPotency = 1f }
+	};
+
+	public static readonly RuneDef ConeMethod = new()
+	{
+		Id = "method_cone",
+		DisplayName = "Cone Method",
+		Category = RuneCategory.Method,
+		DeliveryType = RuneDeliveryType.Cone,
+		Range = 1500f,
+		ConeAngle = 90f,
+		ConeRequiresLineOfSight = true,
+		CastDelay = 0.25f,
+		EnergyCost = 20f,
+		Scaling = new RuneScalingDef { AcuityToRange = 1f }
+	};
  
 	public static readonly RuneDef EmpowerModifier = new RuneDef
 	{
@@ -163,7 +224,7 @@ public static class RuneLibrary
 			{
 				Id = "sub_nova",
 				Category = RuneCategory.Method,
-				DeliveryType = RuneDeliveryType.SelfTouch,
+				DeliveryType = RuneDeliveryType.Nova,
 				AoERadius = 200f
 			}
 		}
@@ -176,11 +237,15 @@ public static class RuneLibrary
 			"fireball" => new List<RuneDef> { FireForce, ProjectileMethod },
 			"empowered_fireball" => new List<RuneDef> { EmpowerModifier, FireForce, ProjectileMethod },
 			"dual_frost_beam" => new List<RuneDef> { DualCast, FrostForce, BeamMethod },
-			"cluster_bomb" => new List<RuneDef> { ClusterTrigger, FireForce, ProjectileMethod },
+			"cluster_bomb" => new List<RuneDef> { DualCast, ClusterTrigger, FireForce, ProjectileMethod },
 			"raw_force" => new List<RuneDef> { FireForce },
 			"airball" => new List<RuneDef> { AirForce, AirProjectileMethod },
 			"frostball" => new List<RuneDef> { FrostForce, FrostProjectileMethod },
 			"earthball" => new List<RuneDef> { EarthForce, EarthProjectileMethod },
+			"fleetness" => new List<RuneDef> { Fleetness },
+			"ember_weapon" => new List<RuneDef> {  EmberWeapon },
+			"launch" => new List<RuneDef> { Launch },
+			"shockwave" => new List<RuneDef> { AirForce, ConeMethod },
 			_ => new List<RuneDef> { FireForce, ProjectileMethod }
 		};
 	}

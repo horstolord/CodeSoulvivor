@@ -177,6 +177,7 @@ public static class AttackData
 				StaminaDamage = 12f,
 				KnockbackForce = 100f
 			},
+			WeaponDamageEffectiveness = 1f,
 			Scaling = new AttributeScalingDef
 			{
 				MightToHealthDamage    = 2f,

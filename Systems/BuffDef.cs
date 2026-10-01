@@ -13,4 +13,12 @@ public class BuffDef
 		DisplayName = displayName;
 		Duration = duration;
 	}
+
+	public BuffDef Clone()
+	{
+		var clone = new BuffDef( Id, DisplayName, Duration );
+		foreach ( var modifier in Modifiers )
+			clone.Modifiers.Add( new BuffModifier( modifier.StatName, modifier.Value, modifier.Type ) );
+		return clone;
+	}
 }

@@ -15,10 +15,20 @@ public class BuffComponent : Component
 {
 	private readonly List<ActiveBuff> _active = new();
 
-	public void ApplyBuff( BuffDef def, StatSheet statSheet )
+	public void ApplyBuff( BuffDef def, StatSheet statSheet, bool refreshExisting = false )
 	{
 		if ( def == null || statSheet == null )
 			return;
+
+		// Cantrip buffs refresh their own duration instead of stacking another copy.
+		if ( refreshExisting )
+		{
+			for ( int i = _active.Count - 1; i >= 0; i-- )
+			{
+				if ( _active[i].Id == def.Id )
+					RemoveBuff( _active[i] );
+			}
+		}
 
 		var buff = new ActiveBuff
 		{
@@ -64,7 +74,7 @@ public class BuffComponent : Component
 
 	private void RemoveBuff( ActiveBuff buff )
 	{
-		var statSheet = GameObject.GetComponent<StatSheet>();
+		var statSheet = Components.GetInAncestorsOrSelf<StatSheet>() ?? GameObject.GetComponent<StatSheet>();
 		
 		foreach ( var (stat, _) in buff.AppliedModifiers )
 		{

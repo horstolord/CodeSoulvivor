@@ -1,4 +1,5 @@
 using System;
+using Sandbox.Code.Actors;
 
 namespace Sandbox.Code.Systems;
 
@@ -55,19 +56,33 @@ public static class CombatMath
 		};
 	}
 
-	/// For some reason didnt work for spells, solved in projcomp.
-	public static void ApplyKnockback( GameObject target, Vector3 direction, float force )
+	public static void ApplyKnockback( GameObject target, Vector3 direction, float force, bool addUpwardBias = true, bool preventGrounding = false )
 	{
 		if ( target == null || force <= 0f )
 			return;
  
 		var normalizedDirection = direction.LengthSquared > 0.0001f ? direction.Normal : Vector3.Up;
-		var biasedDirection = (normalizedDirection + Vector3.Up / 2f).Normal;
- 
+		var knockbackDirection = addUpwardBias
+			? (normalizedDirection + Vector3.Up / 2f).Normal
+			: normalizedDirection;
+		var impulse = knockbackDirection * force;
+
+		var actor = target.Components.GetInAncestorsOrSelf<Actor>();
+		var ragdoll = target.Components.GetInAncestorsOrSelf<IRagdollHandler>()
+			?? actor?.Components.GetInChildren<IRagdollHandler>();
+		if ( ragdoll?.TryApplyImpulse( impulse ) == true )
+			return;
+
 		var controller = target.Components.GetInAncestorsOrSelf<CharacterController>();
-		
- 
+		if ( controller != null )
+		{
+			if ( preventGrounding )
+				target.Components.GetInAncestorsOrSelf<PlayerController>()?.PreventGrounding( 0.5f );
+			controller.Punch( impulse );
+			return;
+		}
+
 		var rigidbody = target.Components.GetInAncestorsOrSelf<Rigidbody>();
-		rigidbody?.ApplyImpulse( biasedDirection * force );
+		rigidbody?.ApplyImpulse( impulse );
 	}
 }

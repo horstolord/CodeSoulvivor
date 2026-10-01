@@ -35,6 +35,10 @@ public sealed class SpellTestComponent : Component
 		if ( Input.Keyboard.Pressed( "7" ) ) LoadPreset( "airball" );
 		if ( Input.Keyboard.Pressed( "8" ) ) LoadPreset( "frostball" );
 		if ( Input.Keyboard.Pressed( "9" ) ) LoadPreset( "earthball" );
+		if ( Input.Keyboard.Pressed( "6" ) ) LoadPreset( "fleetness" );
+		if ( Input.Keyboard.Pressed( "Q" ) ) LoadPreset( "ember_weapon" );
+		if ( Input.Keyboard.Pressed( "E" ) ) LoadPreset( "launch" );
+		if ( Input.Keyboard.Pressed( "R" ) ) LoadPreset( "shockwave" );
 
 		// Cast on 'C' key
 		if ( Input.Keyboard.Pressed( "C" )  )
@@ -54,7 +58,7 @@ public sealed class SpellTestComponent : Component
 		bool castResult = SpellComp.CastSpell( cameraPos + aimDir * 30f, aimDir );
 		if ( castResult )
 		{
-			Log.Info( $"[SpellTester] Cast spell preset '{CurrentPreset}' successfully!" );
+			Log.Info( $"[SpellTester] Started cast for preset '{CurrentPreset}'." );
 		}
 	}
 }

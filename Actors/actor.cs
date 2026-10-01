@@ -30,6 +30,8 @@ public class Actor : Component
 	/// Components can subscribe to react to death — e.g. <see cref="Sandbox.Code.Systems.PlayerRespawnManager"/>.
 	/// </summary>
 	public event Action OnDeath;
+	/// <summary>Raised for a hit that was not evaded, after any poise/stun state changes.</summary>
+	public event Action OnHitReceived;
 
 	/// <summary>
 	/// Whether the GameObject should be destroyed shortly after death. The player overrides this
@@ -225,6 +227,7 @@ public class Actor : Component
 			OnKilled();
 			if (!IsStaggered) Ragdoll();
 		}
+		OnHitReceived?.Invoke();
 		
 	}
 

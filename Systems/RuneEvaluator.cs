@@ -16,7 +16,7 @@ public class RuneEvaluationResult
 
 public static class RuneEvaluator
 {
-	public static RuneEvaluationResult EvaluateSequence( List<RuneDef> runes, GameObject caster, Vector3 origin, Vector3 aimDir, Vector3? targetPoint = null, int currentDepth = 0 )
+	public static RuneEvaluationResult EvaluateSequence( List<RuneDef> runes, GameObject caster, Vector3 origin, Vector3 aimDir, Vector3? targetPoint = null, int currentDepth = 0, float charge01 = 0f )
 	{
 		var result = new RuneEvaluationResult();
 		if ( runes == null || runes.Count == 0 )
@@ -45,6 +45,7 @@ public static class RuneEvaluator
 		var statSheet = caster?.Components.GetInAncestorsOrSelf<Actor>()?.StatSheet;
 		float will = statSheet?.Will.Value ?? 0f;
 		float acuity = statSheet?.Acuity.Value ?? 0f;
+		float wisdom = statSheet?.Wisdom.Value ?? 0f;
 
 		int index = 0;
 		bool hasMethod = false;
@@ -100,12 +101,42 @@ public static class RuneEvaluator
 
 				case RuneCategory.Method:
 					hasMethod = true;
+					if ( rune.Effect != null )
+					{
+						var effect = rune.Effect.Clone();
+						var scaling = rune.Scaling;
+						float potency = 1f + MathF.Max( 0f, will * (scaling?.WillToEffectPotency ?? 0f) / 100f );
+						potency *= (statSheet?.EffectPotency.Value ?? 100f) / 100f;
+						effect.PotencyMultiplier *= potency;
+						effect.Strength *= potency;
+						float durationScale = 1f + MathF.Max( 0f, wisdom * (scaling?.WisdomToDuration ?? 0f) / 100f );
+						durationScale *= (statSheet?.EffectDuration.Value ?? 100f) / 100f;
+						effect.Duration *= durationScale;
+						if ( effect.Buff != null ) effect.Buff.Duration = effect.Duration;
+						ctx.Effects.Add( effect );
+					}
+					float rangeScale = 1f + MathF.Max( 0f, acuity * (rune.Scaling?.AcuityToRange ?? 0f) / 100f );
+					int payloadStart = result.Payloads.Count;
 					CreatePayloadsForMethod( ctx, rune, result.Payloads );
+					for ( int payloadIndex = payloadStart; payloadIndex < result.Payloads.Count; payloadIndex++ )
+					{
+						var payload = result.Payloads[payloadIndex];
+						payload.BeamRange *= rangeScale;
+						payload.AoERadius *= rangeScale;
+						result.Payloads[payloadIndex] = payload;
+					}
 					break;
 			}
 
 			index++;
 		}
+
+		// Method payload contexts were cloned during the rune walk, so resolve charge onto each
+		// clone as well as the consolidated cost context before any fallback payload is created.
+		var chargeScaling = ResolveChargeScaling( runes );
+		ctx.ApplyCharge( charge01, chargeScaling, will );
+		foreach ( var payload in result.Payloads )
+			payload.Context.ApplyCharge( charge01, chargeScaling, will );
 
 		// Evoke Force Alone (Fallback delivery when Force is present without a Method)
 		if ( !hasMethod && ctx.AccumulatedDamage.HealthDamage > 0 )
@@ -113,7 +144,7 @@ public static class RuneEvaluator
 			var fallbackPayload = new SpellPayload
 			{
 				Context = ctx.Clone(),
-				DeliveryType = RuneDeliveryType.SelfTouch,
+				DeliveryType = RuneDeliveryType.Nova,
 				AoERadius = 120f
 			};
 			result.Payloads.Add( fallbackPayload );
@@ -122,6 +153,21 @@ public static class RuneEvaluator
 		result.ConsolidatedContext = ctx;
 		result.Success = result.Payloads.Count > 0;
 		return result;
+	}
+
+	/// <summary>Uses the first method rune with explicit charge scaling, or the shared default.</summary>
+	public static ChargeScalingDef ResolveChargeScaling( List<RuneDef> runes )
+	{
+		if ( runes != null )
+		{
+			foreach ( var rune in runes )
+			{
+				if ( rune?.Category == RuneCategory.Method && rune.ChargeScaling != null )
+					return rune.ChargeScaling;
+			}
+		}
+
+		return ChargeScalingDef.Default;
 	}
 
 	private static void CreatePayloadsForMethod( SpellContext ctx, RuneDef methodRune, List<SpellPayload> outPayloads )
@@ -138,7 +184,9 @@ public static class RuneEvaluator
 				ProjectilePrefabPath = methodRune.ProjectilePrefabPath,
 				BeamRange = methodRune.Range,
 				BeamVisualLength = methodRune.BeamVisualLength, 
-				AoERadius = methodRune.AoERadius
+				AoERadius = methodRune.AoERadius,
+				ConeAngle = methodRune.ConeAngle,
+				ConeRequiresLineOfSight = methodRune.ConeRequiresLineOfSight
 			};
 			outPayloads.Add( payload );
 		}
@@ -159,7 +207,8 @@ public static class RuneEvaluator
 			triggerOrigin,
 			aimDir,
 			triggerOrigin + aimDir * 100f,
-			parentContext.RecursionDepth + 1
+			parentContext.RecursionDepth + 1,
+			parentContext.Charge01
 		);
 
 		if ( evalResult.Success )
@@ -177,10 +226,17 @@ public static class RuneEvaluator
 		{
 			RuneDeliveryType.Projectile => new ProjectileDeliveryMethod(),
 			RuneDeliveryType.Beam => new BeamDeliveryMethod(),
-			RuneDeliveryType.SelfTouch => new SelfTouchDeliveryMethod(),
-			_ => new SelfTouchDeliveryMethod()
+			RuneDeliveryType.Nova => new NovaDeliveryMethod(),
+			RuneDeliveryType.Self => new SelfDeliveryMethod(),
+			RuneDeliveryType.Cone => new ConeDeliveryMethod(),
+			RuneDeliveryType.AoE => null,
+			_ => null
 		};
-
+		if ( deliveryMethod == null )
+		{
+			Log.Warning( $"[RuneEvaluator] Unsupported delivery type '{payload.DeliveryType}'." );
+			return;
+		}
 		deliveryMethod.Deliver( payload );
 		
 	}
